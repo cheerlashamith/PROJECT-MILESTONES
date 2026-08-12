@@ -1,0 +1,21 @@
+Project ID,Project Name,Area,Floors,Material,Estimated Cost,Workers,Duration,Status
+P7559,House,500,1,Basic,900000.0,10,4,Delayed
+P2061,Office,1100,8,Basic,15840000.0,10,16,Ongoing
+P5004,House,500,5,Basic,4500000.0,10,10,Ongoing
+P6619,House,500,2,Basic,1800000.0,10,4,Ongoing
+P9051,House,500,1,Basic,900000.0,10,4,Ongoing
+PNT9386,Painting,100,-,Asian Paints,2380.65,2,1 Days,Completed
+PNT6960,Painting,100,-,Asian Paints,2380.65,2,1 Days,Completed
+P7911,School,700,3,Standard,5250000.0,10,6,Ongoing
+PNT3848,Painting,150,-,Dulux,2846.75,2,1 Days,Completed
+PNT1068,Painting,150,-,Dulux,6386.75,2,1 Days,Completed
+P7121,House,500,1,Basic,900000.0,10,4,Ongoing
+P8676,House,500,1,Basic,900000.0,10,4,Ongoing
+PNT9397,Painting,100,-,Asian Paints,2132.85,2,1 Days,Completed
+PNT2702,Painting,100,-,Asian Paints,2132.85,2,1 Days,Completed
+PNT9386,Painting,100,-,Asian Paints,3076.85,2,1 Days,Completed
+P5369,Hospital,700,2,Standard,3500000.0,10,4,Ongoing
+PNT9536,Painting,250,-,Asian Paints,2501.6,2,1 Days,Completed
+P6702,My Project,1200,1,Basic,2160000.0,17,3,Ongoing
+P4259,My Project,1200,1,Basic,2160000.0,17,3,Ongoing
+P2128,villaahhh,1200,1,Basic,2160000.0,17,3,Ongoing

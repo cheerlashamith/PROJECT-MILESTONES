@@ -1,0 +1,32 @@
+{
+  "Construction Materials": {
+    "Cement": "OPC (Ordinary Portland Cement) is common for general use. PPC (Portland Pozzolana Cement) is better for plastering and wet areas. SRC is used where sulphate attack is a risk.",
+    "Steel": "Fe500 and Fe500D are standard TMT rebars for construction. 'D' stands for ductility, making it better for earthquake-prone zones.",
+    "Bricks": "Red clay bricks are traditional. Fly ash bricks are eco-friendly and offer better finish. AAC blocks are lightweight, saving structural cost and providing good insulation.",
+    "Concrete Mix Ratios": "M15 (1:2:4) for plain concrete, M20 (1:1.5:3) for standard RCC work (slabs, beams), M25 (1:1:2) for heavy load structures."
+  },
+  "Structural Components": {
+    "Foundation": "Isolated footings for normal soil. Raft/Mat foundation for low bearing capacity soil. Pile foundation for deep loose soil or high rises.",
+    "Columns and Beams": "Columns transfer vertical loads to foundations. Beams transfer horizontal loads to columns. Minimum column size for a single story is usually 9x9 inches with 4 bars of 12mm.",
+    "Slabs": "Standard slab thickness is 5-6 inches. Main reinforcement runs along the shorter span, distribution bars along the longer span."
+  },
+  "Architecture": {
+    "Planning": "Ensure proper ventilation and natural lighting. Orient the building keeping sun path and wind direction in mind.",
+    "Green Buildings": "Use sustainable materials, rainwater harvesting, solar panels, and energy-efficient lighting. Maximize natural light to reduce energy consumption."
+  },
+  "Project Management": {
+    "Cost Estimation": "Cost depends on built-up area and finish quality. Basic finish: ~$20/sqft, Standard: ~$30/sqft, Premium: ~$45+/sqft (approximate localized values).",
+    "Scheduling": "Use Gantt charts. Sequence: Excavation -> Foundation -> Plinth -> Columns/Brickwork -> Lintel -> Roof Slab -> Plastering -> Finishing."
+  },
+  "Workforce": {
+    "Roles": "Site Engineer oversees execution. Mason does brickwork/plastering. Bar bender ties steel. Helper assists skilled labor.",
+    "Labour Estimation": "Thumb rule: For 1000 sq ft house, roughly 3-4 masons and 4-5 helpers needed per day for structural work."
+  },
+  "Safety": {
+    "PPE": "Hard hats (helmets), safety goggles, reflective vests, steel-toed boots, and gloves are mandatory. Safety harnesses required for work above 2 meters.",
+    "Risk Mitigation": "Regular site inspections, clear hazard signages, proper scaffolding, and first aid kits on site."
+  },
+  "Delay Causes": {
+    "Common Reasons": "Labour shortages, material supply delays, severe weather (heavy rain), design changes midway, and cash flow issues."
+  }
+}
