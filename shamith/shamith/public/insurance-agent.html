@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ACRA - Insurance Agent</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Libre+Franklin:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="api-client.js"></script>
+  <script type="module" src="page-auth.js"></script>
+  
+  <style>
+    :root {
+      --bg-main: #f8fafc;
+      --bg-card: #ffffff;
+      --bg-sidebar: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      
+      --accent-primary: #f97316;
+      --accent-secondary: #1e3a8a;
+      --accent-light: #38bdf8;
+      
+      --border-color: #e2e8f0;
+      --transition-speed: 0.3s;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Libre Franklin', sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      display: flex;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    h1, h2, h3, h4, h5, h6 { font-family: 'Libre Baskerville', serif; color: var(--accent-secondary); }
+
+    /* Sidebar */
+    #sidebar { width: 280px; background-color: var(--bg-sidebar); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; height: 100vh; position: fixed; left: 0; top: 0; transition: transform var(--transition-speed) ease; z-index: 1000; overflow-y: auto; }
+    #sidebar.collapsed { transform: translateX(-280px); }
+    .sidebar-header { padding: 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); }
+    .brand-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .brand-logo i { color: var(--accent-primary); font-size: 1.8rem; }
+    .brand-title { font-family: 'Libre Baskerville', serif; font-weight: 700; font-size: 1.25rem; color: var(--accent-secondary); }
+    .close-sidebar-btn { background: none; border: none; color: var(--text-muted); font-size: 1.2rem; cursor: pointer; }
+    .sidebar-menu { padding: 20px 0; display: flex; flex-direction: column; gap: 5px; }
+    .menu-group-title { padding: 10px 24px; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+    .menu-item { display: flex; align-items: center; gap: 12px; padding: 12px 24px; color: var(--text-main); text-decoration: none; font-weight: 500; transition: all var(--transition-speed); border-left: 4px solid transparent; }
+    .menu-item:hover, .menu-item.active { color: var(--accent-secondary); background-color: #f1f5f9; border-left-color: var(--accent-primary); }
+    .menu-item i { font-size: 1.1rem; width: 20px; color: var(--accent-primary); }
+
+    /* Main Area */
+    #main-wrapper { flex: 1; margin-left: 280px; transition: margin-left var(--transition-speed) ease; display: flex; flex-direction: column; min-height: 100vh; }
+    #main-wrapper.expanded { margin-left: 0; }
+    header { background-color: var(--bg-card); height: 70px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; position: sticky; top: 0; z-index: 900; }
+    .toggle-sidebar-btn { background: none; border: none; color: var(--accent-secondary); font-size: 1.4rem; cursor: pointer; }
+    .content-container { padding: 40px; flex: 1; max-width: 1400px; width: 100%; margin: 0 auto; }
+    
+    .page-title { font-size: 2.2rem; margin-bottom: 8px; }
+    .page-subtitle { font-size: 1rem; color: var(--text-muted); margin-bottom: 30px; }
+
+    /* Cards */
+    .card { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .row { display: flex; flex-wrap: wrap; margin: 0 -10px; }
+    .col { flex: 1; padding: 0 10px; min-width: 300px; }
+
+    /* Forms */
+    .form-group { margin-bottom: 20px; }
+    .form-label { display: block; font-weight: 600; margin-bottom: 8px; color: var(--text-main); font-size: 0.9rem;}
+    .form-control { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; font-family: inherit; font-size: 1rem;}
+    .form-control:focus { outline: none; border-color: var(--accent-primary); box-shadow: 0 0 0 3px rgba(249,115,22,0.1); }
+    select.form-control { cursor: pointer; }
+    
+    .btn { padding: 12px 24px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; font-family: inherit;}
+    .btn-primary { background-color: var(--accent-primary); color: white; }
+    .btn-primary:hover { background-color: #ea580c; }
+    
+    /* Results */
+    .results-panel { display: none; margin-top: 24px; animation: fadeIn 0.5s; }
+    
+    .risk-meter {
+        width: 100%;
+        height: 24px;
+        background: linear-gradient(90deg, #22c55e 0%, #eab308 50%, #ef4444 100%);
+        border-radius: 12px;
+        margin: 20px 0;
+        position: relative;
+    }
+
+    .risk-pointer {
+        position: absolute;
+        top: -8px;
+        bottom: -8px;
+        width: 4px;
+        background: var(--text-main);
+        border-radius: 2px;
+        transition: left 1s ease-out;
+        box-shadow: 0 0 0 2px white;
+    }
+
+    .risk-pointer::after {
+        content: '▼';
+        position: absolute;
+        top: -15px;
+        left: -4px;
+        font-size: 12px;
+    }
+
+    .doc-box {
+        background-color: rgba(248, 250, 252, 0.8);
+        border: 1px dashed var(--border-color);
+        padding: 20px;
+        border-radius: 8px;
+        font-family: monospace;
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        white-space: pre-wrap;
+    }
+    
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Loader */
+    .loader { display: none; text-align: center; padding: 40px; }
+    .spinner { font-size: 2.5rem; color: var(--accent-primary); animation: spin 1s linear infinite; margin-bottom: 15px;}
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <aside id="sidebar">
+    <div class="sidebar-header">
+      <a href="dashboard.html" class="brand-logo">
+        <i class="fa-solid fa-helmet-safety"></i>
+        <div class="brand-title">ACRA Platform</div>
+      </a>
+      <button class="close-sidebar-btn" onclick="toggleSidebar()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    
+    <div class="sidebar-menu">
+      <div class="menu-group-title">Main</div>
+      <a href="dashboard.html" class="menu-item"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+      <a href="ai-assistant-v2.html" class="menu-item"><i class="fa-solid fa-robot"></i> AI Assistant</a>
+      <a href="projects.html" class="menu-item"><i class="fa-solid fa-folder"></i> Projects</a>
+      
+      <div class="menu-group-title">AI Modules</div>
+      <a href="risk-detection.html" class="menu-item"><i class="fa-solid fa-triangle-exclamation"></i> Risk Detection</a>
+      <a href="material-estimation.html" class="menu-item"><i class="fa-solid fa-calculator"></i> Material Estimation</a>
+      <a href="daily-reports.html" class="menu-item"><i class="fa-solid fa-file-invoice"></i> Daily Reports</a>
+      <a href="project-qa.html" class="menu-item"><i class="fa-solid fa-circle-question"></i> Project Q&A</a>
+      <a href="theme-generator.html" class="menu-item"><i class="fa-solid fa-palette"></i> Theme Visualizer</a>
+      <a href="compliance-agent.html" class="menu-item"><i class="fa-solid fa-clipboard-check"></i> Compliance Agent</a>
+      <a href="insurance-agent.html" class="menu-item active"><i class="fa-solid fa-shield-cat"></i> Insurance Agent</a>
+      
+      <div class="menu-group-title">Management</div>
+      <a href="documents.html" class="menu-item"><i class="fa-solid fa-file-shield"></i> Documents</a>
+      <a href="ai-reports.html" class="menu-item"><i class="fa-solid fa-file-contract"></i> AI Reports</a>
+      <a href="analytics.html" class="menu-item"><i class="fa-solid fa-chart-pie"></i> Analytics</a>
+      <a href="settings.html" class="menu-item"><i class="fa-solid fa-gear"></i> Settings</a>
+    </div>
+  </aside>
+
+  <main id="main-wrapper">
+    <header>
+      <div style="display: flex; align-items: center; gap: 15px;">
+        <button class="toggle-sidebar-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+        <div style="font-weight: 600; color: var(--accent-secondary);"><i class="fa-solid fa-shield-cat" style="color:var(--accent-primary); margin-right:8px;"></i>AI Insurance Agent Active</div>
+      </div>
+    </header>
+
+    <div class="content-container">
+      <h1 class="page-title">Insurance Agent</h1>
+      <p class="page-subtitle">Assess insurance exposure, evaluate incident severity, and generate claim documentation.</p>
+
+      <div class="row">
+        <div class="col" style="flex: 1.5;">
+          <div class="card" style="border-top: 4px solid var(--accent-primary);">
+            <h3 style="margin-bottom: 20px;"><i class="fa-solid fa-file-signature"></i> Incident / Exposure Entry</h3>
+            
+            <form id="insuranceForm">
+              <div class="row">
+                <div class="col form-group">
+                  <label class="form-label">Event Type</label>
+                  <select class="form-control" id="eventType" required>
+                    <option value="">Select Event...</option>
+                    <option value="Proactive">Proactive Site Risk Assessment</option>
+                    <option value="PropertyDamage">Property Damage Incident</option>
+                    <option value="WorkerInjury">Worker Injury / Medical</option>
+                    <option value="Weather">Weather-Related Delay/Damage</option>
+                  </select>
+                </div>
+                <div class="col form-group">
+                  <label class="form-label">Estimated Financial Impact ($)</label>
+                  <input type="number" class="form-control" id="impact" placeholder="e.g. 5000" required>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Incident Description & Context</label>
+                <textarea class="form-control" id="description" rows="4" placeholder="Provide a detailed description of the event or the current site conditions to evaluate exposure..."></textarea>
+              </div>
+
+              <button type="submit" class="btn btn-primary"><i class="fa-solid fa-scale-balanced"></i> Evaluate Risk & Claim Profile</button>
+            </form>
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="card" style="background-color: #f8fafc;">
+            <h4 style="margin-bottom: 15px;"><i class="fa-solid fa-shield-virus"></i> Assessment Metrics</h4>
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 10px;">The Insurance Agent utilizes historical claims data and liability frameworks to provide:</p>
+            <ul style="color: var(--text-muted); font-size: 0.9rem; margin-left: 20px; line-height: 1.6;">
+              <li>Claim probability indexing</li>
+              <li>Estimated premium impact</li>
+              <li>Required documentation checks</li>
+              <li>Subrogation potential analysis</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="loader" id="loader">
+        <i class="fa-solid fa-circle-notch spinner"></i>
+        <h4 style="color: var(--accent-secondary);">Calculating Risk Profiles...</h4>
+        <p style="color: var(--text-muted);">Analyzing liability exposure and generating claim drafts</p>
+      </div>
+
+      <div class="results-panel" id="resultsPanel">
+        <div class="row">
+          <div class="col">
+            <div class="card">
+              <h3 style="margin-bottom: 10px;">Exposure Risk Score</h3>
+              <p style="font-size: 0.9rem; color: var(--text-muted);">Severity of potential liability or claim denial.</p>
+              
+              <div class="risk-meter">
+                  <div class="risk-pointer" id="riskPointer" style="left: 0%;"></div>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">
+                  <span>Low Risk</span>
+                  <span>Moderate</span>
+                  <span>High Risk</span>
+              </div>
+              
+              <div style="margin-top: 25px;">
+                  <h4 style="margin-bottom: 5px;" id="severityLabel">Severity: </h4>
+                  <p style="color: var(--text-main); font-size: 0.95rem;" id="recommendationText"></p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col">
+            <div class="card">
+              <h3 style="margin-bottom: 15px;">Generated Claim Documentation</h3>
+              <div class="doc-box" id="claimDoc">
+                <!-- AI Generated Text -->
+              </div>
+              <button id="exportPdfBtn" class="btn btn-primary" style="margin-top: 15px; width: 100%; justify-content: center;"><i class="fa-solid fa-download"></i> Export to PDF</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+  </main>
+
+  <script>
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('collapsed');
+      document.getElementById('main-wrapper').classList.toggle('expanded');
+    }
+
+    document.getElementById('insuranceForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const eventType = document.getElementById('eventType').value;
+      const impact = document.getElementById('impact').value;
+      const desc = document.getElementById('description').value;
+      
+      document.getElementById('resultsPanel').style.display = 'none';
+      document.getElementById('loader').style.display = 'block';
+
+      try {
+        const result = await CIHApi.submitTask('/api/insurance/analyze', {
+          event_type: eventType,
+          impact: Number(impact),
+          description: desc
+        });
+        document.getElementById('loader').style.display = 'none';
+        const riskPercentage = Number(result.risk_score || 0);
+        const severity = String(result.severity || 'Professional review required');
+
+        // Update UI
+        setTimeout(() => {
+            document.getElementById('riskPointer').style.left = riskPercentage + '%';
+        }, 100);
+
+        const severityLabel = document.getElementById('severityLabel');
+        severityLabel.textContent = 'Severity: ';
+        const severityValue = document.createElement('span');
+        severityValue.style.color = 'var(--accent-primary)';
+        severityValue.textContent = severity;
+        severityLabel.appendChild(severityValue);
+        document.getElementById('recommendationText').innerText = String(result.recommendation || 'Professional review required.');
+        document.getElementById('claimDoc').innerText = String(result.claim_document || 'No claim draft returned.');
+
+        document.getElementById('resultsPanel').style.display = 'block';
+
+      } catch (error) {
+        document.getElementById('loader').style.display = 'none';
+        document.getElementById('resultsPanel').style.display = 'block';
+        document.getElementById('severityLabel').innerText = 'Unable to evaluate';
+        document.getElementById('recommendationText').innerText = error.message;
+        document.getElementById('claimDoc').innerText = 'No claim document generated.';
+      }
+    });
+  
+    document.getElementById('exportPdfBtn')?.addEventListener('click', function() {
+      const claimText = document.getElementById('claimDoc').innerText;
+      if (!claimText || claimText.trim() === '' || claimText.trim() === 'No claim document generated.') {
+        alert('Please evaluate a risk event first to generate a claim document.');
+        return;
+      }
+      const riskScore = document.getElementById('riskPointer').style.left || '0%';
+      const severityText = document.getElementById('severityLabel').textContent || 'N/A';
+      const recText = document.getElementById('recommendationText').innerText || 'N/A';
+      const eventType = document.getElementById('eventType').value || 'N/A';
+      const impact = document.getElementById('impact').value || '0';
+      const date = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+
+      let formattedClaim = claimText
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/^## (.+)$/gm, '<h3 style="color:#1e3a8a;margin:14px 0 6px;font-size:15px;">$1</h3>')
+        .replace(/^# (.+)$/gm, '<h2 style="color:#1e3a8a;margin:18px 0 8px;font-size:17px;">$1</h2>')
+        .replace(/\n/g, '<br>');
+
+      const el = document.createElement('div');
+      el.style.cssText = 'padding:40px;font-family:Arial,sans-serif;color:#0f172a;background:#fff;width:794px;';
+      el.innerHTML = `
+        <div style="border-bottom:3px solid #1e3a8a;padding-bottom:16px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <h1 style="color:#1e3a8a;font-size:22px;margin:0;font-weight:700;">ACRA Platform</h1>
+            <p style="color:#f97316;font-weight:700;margin:5px 0 0;text-transform:uppercase;letter-spacing:1px;font-size:11px;">Insurance & Liability Claim Report</p>
+          </div>
+          <div style="text-align:right;font-size:12px;color:#64748b;">
+            <div>Generated: <strong>${date}</strong></div>
+          </div>
+        </div>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:24px;font-size:13px;">
+          <tr style="background:#f8fafc;">
+            <td style="padding:10px 14px;font-weight:700;color:#1e3a8a;width:40%;">Event Type</td>
+            <td style="padding:10px 14px;">${eventType}</td>
+          </tr>
+          <tr>
+            <td style="padding:10px 14px;font-weight:700;color:#1e3a8a;">Estimated Financial Impact</td>
+            <td style="padding:10px 14px;">$${Number(impact).toLocaleString()}</td>
+          </tr>
+          <tr style="background:#f8fafc;">
+            <td style="padding:10px 14px;font-weight:700;color:#1e3a8a;">Risk Score</td>
+            <td style="padding:10px 14px;">${riskScore}</td>
+          </tr>
+          <tr>
+            <td style="padding:10px 14px;font-weight:700;color:#1e3a8a;">Severity</td>
+            <td style="padding:10px 14px;">${severityText.replace('Severity: ','')}</td>
+          </tr>
+        </table>
+        <h3 style="font-size:15px;color:#1e3a8a;border-bottom:1px solid #e2e8f0;padding-bottom:8px;margin-bottom:14px;">AI Recommendation</h3>
+        <p style="font-size:13px;line-height:1.7;margin-bottom:20px;">${recText}</p>
+        <h3 style="font-size:15px;color:#1e3a8a;border-bottom:1px solid #e2e8f0;padding-bottom:8px;margin-bottom:14px;">Generated Claim Documentation</h3>
+        <div style="font-size:12px;line-height:1.8;">${formattedClaim}</div>
+        <div style="margin-top:50px;border-top:1px solid #e2e8f0;padding-top:14px;text-align:center;font-size:10px;color:#94a3b8;font-style:italic;">
+          This advisory report was generated by ACRA Platform. Not a substitute for legal or professional insurance advice.
+        </div>`;
+
+      // DOM-append fix for white PDF
+      el.style.position = 'fixed';
+      el.style.left = '-9999px';
+      el.style.top = '0';
+      el.style.zIndex = '-1000';
+      document.body.appendChild(el);
+
+      html2pdf().set({
+        margin: [12, 12, 12, 12],
+        filename: `Liability_Claim_Report_${Date.now()}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      }).from(el).save().then(() => {
+        document.body.removeChild(el);
+      });
+    });
+
+  </script>
+</body>
+</html>

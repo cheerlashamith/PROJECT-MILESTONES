@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ACRA - Projects</title>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Libre+Franklin:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    :root {
+      --bg-main: #f8fafc;
+      --bg-card: #ffffff;
+      --bg-sidebar: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --accent-primary: #f97316;
+      --accent-secondary: #1e3a8a;
+      --border-color: #e2e8f0;
+      --transition-speed: 0.3s;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Libre Franklin', sans-serif; background-color: var(--bg-main); color: var(--text-main); display: flex; min-height: 100vh; overflow-x: hidden; }
+    h1, h2, h3, h4, h5, h6 { font-family: 'Libre Baskerville', serif; color: var(--accent-secondary); }
+
+    /* Sidebar */
+    #sidebar { width: 280px; background-color: var(--bg-sidebar); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; height: 100vh; position: fixed; left: 0; top: 0; transition: transform var(--transition-speed) ease; z-index: 1000; overflow-y: auto; }
+    #sidebar.collapsed { transform: translateX(-280px); }
+    .sidebar-header { padding: 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); }
+    .brand-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .brand-logo i { color: var(--accent-primary); font-size: 1.8rem; }
+    .brand-title { font-family: 'Libre Baskerville', serif; font-weight: 700; font-size: 1.25rem; color: var(--accent-secondary); }
+    .close-sidebar-btn { background: none; border: none; color: var(--text-muted); font-size: 1.2rem; cursor: pointer; }
+    .sidebar-menu { padding: 20px 0; display: flex; flex-direction: column; gap: 5px; }
+    .menu-group-title { padding: 10px 24px; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+    .menu-item { display: flex; align-items: center; gap: 12px; padding: 12px 24px; color: var(--text-main); text-decoration: none; font-weight: 500; transition: all var(--transition-speed); border-left: 4px solid transparent; }
+    .menu-item:hover, .menu-item.active { color: var(--accent-secondary); background-color: #f1f5f9; border-left-color: var(--accent-primary); }
+    .menu-item i { font-size: 1.1rem; width: 20px; color: var(--accent-primary); }
+
+    /* Main Content */
+    #main-wrapper { flex: 1; margin-left: 280px; transition: margin-left var(--transition-speed) ease; display: flex; flex-direction: column; min-height: 100vh; }
+    #main-wrapper.expanded { margin-left: 0; }
+    header { background-color: var(--bg-card); height: 70px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; position: sticky; top: 0; z-index: 900; }
+    .toggle-sidebar-btn { background: none; border: none; color: var(--accent-secondary); font-size: 1.4rem; cursor: pointer; }
+    .content-container { padding: 40px; flex: 1; max-width: 1400px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; }
+    
+    .card { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+
+    /* Buttons */
+    .btn { padding: 12px 24px; background-color: var(--accent-primary); color: white; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: 'Libre Franklin', sans-serif; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn:hover { background-color: #e8630a; color: white; }
+    .btn-outline { background-color: transparent; border: 2px solid var(--border-color); color: var(--text-main); }
+    .btn-outline:hover { background-color: #f1f5f9; color: var(--accent-secondary); }
+
+    /* ThreeJS Builder Container */
+    #builderStage {
+      width: 100%;
+      height: 600px;
+      border-radius: 8px;
+      overflow: hidden;
+      background-color: #0b1730;
+      position: relative;
+      cursor: grab;
+    }
+    #builderStage:active { cursor: grabbing; }
+
+    /* Builder Controls */
+    .builder-controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
+    }
+    .builder-btn {
+      padding: 10px 18px;
+      background-color: var(--bg-main);
+      border: 1px solid var(--border-color);
+      color: var(--accent-secondary);
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .builder-btn:hover {
+      background-color: #f1f5f9;
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
+    }
+
+    /* Toast Notification */
+    #toast {
+      visibility: hidden;
+      min-width: 250px;
+      background-color: #333;
+      color: #fff;
+      text-align: center;
+      border-radius: 4px;
+      padding: 12px;
+      position: fixed;
+      z-index: 2000;
+      left: 50%;
+      bottom: 30px;
+      transform: translateX(-50%);
+      font-size: 0.9rem;
+    }
+    #toast.show {
+      visibility: visible;
+      animation: fadein 0.3s, fadeout 0.3s 2.7s;
+    }
+    @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+    @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+  </style>
+
+  <!-- Three.js Library via CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="api-client.js"></script>
+  <script type="module" src="page-auth.js"></script>
+</head>
+<body>
+
+  <aside id="sidebar">
+    <div class="sidebar-header">
+      <a href="dashboard.html" class="brand-logo">
+        <i class="fa-solid fa-helmet-safety"></i>
+        <div class="brand-title">ACRA Platform</div>
+      </a>
+      <button class="close-sidebar-btn" onclick="toggleSidebar()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    
+    <div class="sidebar-menu">
+      <div class="menu-group-title">Main</div>
+      <a href="dashboard.html" class="menu-item"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+      <a href="ai-assistant-v2.html" class="menu-item"><i class="fa-solid fa-robot"></i> AI Assistant</a>
+      <a href="projects.html" class="menu-item active"><i class="fa-solid fa-folder"></i> Projects</a>
+      <div class="menu-group-title">AI Modules</div>
+      
+      <a href="risk-detection.html" class="menu-item"><i class="fa-solid fa-triangle-exclamation"></i> Risk Detection</a>
+      <a href="material-estimation.html" class="menu-item"><i class="fa-solid fa-calculator"></i> Material Estimation</a>
+      <a href="daily-reports.html" class="menu-item"><i class="fa-solid fa-file-invoice"></i> Daily Reports</a>
+      <a href="project-qa.html" class="menu-item"><i class="fa-solid fa-circle-question"></i> Project Q&A</a>
+      <div class="menu-group-title">Management</div>
+      <a href="documents.html" class="menu-item"><i class="fa-solid fa-file-shield"></i> Documents</a>
+      <a href="ai-reports.html" class="menu-item"><i class="fa-solid fa-file-contract"></i> AI Reports</a>
+      <a href="analytics.html" class="menu-item"><i class="fa-solid fa-chart-pie"></i> Analytics</a>
+      <a href="settings.html" class="menu-item"><i class="fa-solid fa-gear"></i> Settings</a>
+    </div>
+  </aside>
+
+  <main id="main-wrapper">
+    <header>
+      <div style="display: flex; align-items: center; gap: 15px;">
+        <button class="toggle-sidebar-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+        <div style="font-weight:600; color:var(--accent-secondary);"><i class="fa-solid fa-folder" style="color:var(--accent-primary);margin-right:8px;"></i>Project Management</div>
+      </div>
+    </header>
+
+    <div class="content-container">
+      <h1 style="font-size: 2.2rem; margin-bottom: 8px;">3D Architectural Massing</h1>
+      <p style="font-size: 1rem; color: var(--text-muted); margin-bottom: 30px;">Interactive dynamic visualization using custom Three.js engine.</p>
+
+      <div style="display:flex; gap: 15px; margin-bottom: 20px;">
+        <button class="btn" style="flex:1; padding: 15px; font-size: 1.1rem;" onclick="showNewProject()"><i class="fa-solid fa-folder-plus"></i> New Project</button>
+        <button class="btn btn-outline" style="flex:1; padding: 15px; font-size: 1.1rem; border: 2px solid var(--border-color); background: white; color: var(--text-main);" onclick="showExistingProject()"><i class="fa-solid fa-folder-open"></i> Existing Projects</button>
+      </div>
+
+      <div id="existing-projects-panel" style="display: none; margin-bottom: 20px;">
+        <div id="projects-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:16px;"></div>
+        <div id="no-projects-msg" style="display:none; text-align: center; padding: 40px; background-color: white; border-radius: 8px; border: 1px solid var(--border-color);">
+          <i class="fa-solid fa-box-open" style="font-size: 3rem; color: var(--border-color); margin-bottom: 15px;"></i>
+          <h3 style="color: var(--text-muted);">No saved projects yet</h3>
+          <p style="color: var(--text-muted); font-size: 0.9rem;">Create a new project to get started. Your projects are saved locally in the browser.</p>
+          <button class="btn" style="margin-top:16px;" onclick="showNewProject()"><i class="fa-solid fa-folder-plus"></i> Create First Project</button>
+        </div>
+      </div>
+
+      <div class="card" id="new-project-panel" style="display: none; border: 2px dashed var(--accent-primary); background-color: #fffaf5;">
+        <h3 style="margin-bottom: 20px; color: var(--accent-primary); text-align: center;"><i class="fa-solid fa-file-arrow-up"></i> Define Project Specs</h3>
+        
+        <div style="display: flex; gap: 30px;">
+          <!-- Manual Input Form -->
+          <div style="flex: 1; border-right: 1px solid var(--border-color); padding-right: 30px;">
+            <h4 style="margin-bottom: 15px;">Manual Input</h4>
+            <div style="margin-bottom:14px;">
+              <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:5px;">Project Name <span style="color:#dc2626;">*</span></label>
+              <input type="text" id="project-name-input" placeholder="e.g. Green Valley Villa – Phase 1" style="width:100%; padding:10px; border:1px solid var(--border-color); border-radius:4px; font-family:inherit;">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+              <div>
+                <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:5px;">Length (m)</label>
+                <input type="number" id="manual-length" value="24" style="width:100%; padding:10px; border:1px solid var(--border-color); border-radius:4px;">
+              </div>
+              <div>
+                <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:5px;">Width (m)</label>
+                <input type="number" id="manual-width" value="16" style="width:100%; padding:10px; border:1px solid var(--border-color); border-radius:4px;">
+              </div>
+              <div>
+                <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:5px;">Floors</label>
+                <input type="number" id="manual-floors" value="2" style="width:100%; padding:10px; border:1px solid var(--border-color); border-radius:4px;">
+              </div>
+              <div>
+                <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:5px;">Architecture</label>
+                <select id="manual-style" style="width:100%; padding:10px; border:1px solid var(--border-color); border-radius:4px; background:white;">
+                  <option value="classic">Classic (Pitched)</option>
+                  <option value="modern">Modern (Flat)</option>
+                </select>
+              </div>
+              <div>
+                <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:5px;">Facade Material</label>
+                <select id="manual-material" style="width:100%; padding:10px; border:1px solid var(--border-color); border-radius:4px; background:white;">
+                  <option value="concrete">Concrete / Stucco</option>
+                  <option value="brick">Red Brick</option>
+                  <option value="wood">Timber Cladding</option>
+                </select>
+              </div>
+              <div>
+                <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:5px;">Window Density</label>
+                <select id="manual-windows" style="width:100%; padding:10px; border:1px solid var(--border-color); border-radius:4px; background:white;">
+                  <option value="medium">Medium</option>
+                  <option value="high">High (Glass Facade)</option>
+                  <option value="low">Low</option>
+                </select>
+              </div>
+            </div>
+            <button class="btn" style="width:100%;" onclick="buildFromManual()"><i class="fa-solid fa-hammer"></i> Build & Save Project</button>
+          </div>
+          
+          <!-- AI Document Upload -->
+          <div style="flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: center;">
+            <h4 style="margin-bottom: 15px;">OR AI Document Extraction</h4>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">Upload a floor plan spec. The AI will extract layouts, dimensions, and architectural style to build the 3D model automatically.</p>
+            <input type="file" id="spec-upload" style="display:none;" onchange="handleSpecUpload(event)">
+            <button class="builder-btn" style="margin: 0 auto; background-color: var(--accent-primary); color: white;" onclick="document.getElementById('spec-upload').click()">Browse Document</button>
+            <div id="upload-status" style="margin-top: 15px; font-weight: 600; font-size: 0.9rem;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="3d-card" style="padding: 15px; display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+          <h3 style="color: var(--accent-secondary); margin: 0;">Parametric 3D Visualization</h3>
+          <button class="btn btn-outline" style="padding: 8px 15px; border: 1px solid var(--border-color); background: white;" onclick="showNewProject()"><i class="fa-solid fa-arrow-left"></i> Back to Setup</button>
+        </div>
+        <div class="builder-controls">
+          <button class="builder-btn" data-builder-view="street"><i class="fa-solid fa-road"></i> Street View</button>
+          <button class="builder-btn" data-builder-view="roof"><i class="fa-solid fa-arrow-down"></i> Roof Inspection</button>
+          <button class="builder-btn" data-builder-view="explode"><i class="fa-solid fa-bomb"></i> Explode Assembly</button>
+          <button class="builder-btn" data-builder-view="wire"><i class="fa-solid fa-border-all"></i> Wireframe</button>
+          <button class="builder-btn" data-builder-view="night"><i class="fa-solid fa-moon"></i> Day/Night</button>
+          <button class="builder-btn" data-builder-view="ai-scan" style="background-color: var(--accent-primary); color: white; border-color: var(--accent-primary);"><i class="fa-solid fa-microchip"></i> AI Scan</button>
+          <button class="builder-btn" data-builder-view="reset"><i class="fa-solid fa-rotate-left"></i> Reset</button>
+        </div>
+        
+        <div id="builderStage">
+          <div style="position: absolute; bottom: 20px; right: 20px; color: rgba(255,255,255,0.7); background: rgba(0,0,0,0.4); padding: 8px 12px; border-radius: 4px; font-size: 0.85rem; pointer-events: none; z-index: 10;">
+            Drag to Rotate | Scroll to Zoom
+          </div>
+        </div>
+        
+        <div style="margin-top: 20px; text-align: center;">
+          <button class="btn" style="background-color: var(--accent-secondary);" onclick="triggerEstimation()"><i class="fa-solid fa-calculator"></i> Estimate Materials</button>
+        </div>
+      </div>
+      <div class="card" id="materials-card" style="display: none;">
+        <h3 style="margin-bottom: 20px; color: var(--accent-secondary);"><i class="fa-solid fa-calculator"></i> AI Material & Cost Estimation</h3>
+        <div id="ai-materials-result" style="line-height: 1.6; font-size: 0.95rem;"></div>
+      </div>
+    </div>
+  </main>
+
+  <div id="toast"></div>
+
+  <script>
+    // ── Project Save / Load ────────────────────────────────────────────────
+    function getProjects() {
+      return JSON.parse(localStorage.getItem('acraProjects') || '[]');
+    }
+
+    function saveProject(project) {
+      const projects = getProjects();
+      const existing = projects.findIndex(p => p.id === project.id);
+      if (existing >= 0) {
+        projects[existing] = project;
+      } else {
+        projects.unshift(project);
+      }
+      localStorage.setItem('acraProjects', JSON.stringify(projects));
+    }
+
+    function deleteProject(id) {
+      if (!confirm('Delete this project permanently?')) return;
+      let projects = getProjects().filter(p => p.id !== id);
+      localStorage.setItem('acraProjects', JSON.stringify(projects));
+      loadProjectsPanel();
+    }
+
+    function loadProjectsPanel() {
+      const grid = document.getElementById('projects-grid');
+      const noMsg = document.getElementById('no-projects-msg');
+      const projects = getProjects();
+      if (projects.length === 0) {
+        grid.innerHTML = '';
+        noMsg.style.display = 'block';
+        return;
+      }
+      noMsg.style.display = 'none';
+      const typeColors = { Villa:'#f97316', Apartment:'#1e3a8a', Commercial:'#7c3aed', 'Single Story':'#16a34a', 'Double Story':'#0891b2' };
+      grid.innerHTML = projects.map(p => {
+        const date = new Date(p.createdAt).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'});
+        const color = typeColors[p.houseType] || '#64748b';
+        return `<div style="background:white;border:1px solid var(--border-color);border-radius:10px;padding:20px;border-left:4px solid ${color};">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+            <h4 style="font-family:'Libre Baskerville',serif;color:var(--accent-secondary);font-size:1rem;margin:0;">${escHTML(p.name)}</h4>
+            <span style="font-size:0.75rem;color:${color};font-weight:700;background:${color}20;padding:3px 8px;border-radius:12px;">${escHTML(p.houseType||'Villa')}</span>
+          </div>
+          <div style="font-size:0.83rem;color:var(--text-muted);line-height:1.6;margin-bottom:14px;">
+            <div><i class="fa-solid fa-ruler-combined" style="width:16px;"></i> ${p.length}m &times; ${p.width}m &bull; ${p.floors} floor(s)</div>
+            <div><i class="fa-solid fa-paint-roller" style="width:16px;"></i> ${escHTML(p.facade||'Concrete')} &bull; ${escHTML(p.style||'Classic')}</div>
+            <div><i class="fa-regular fa-calendar" style="width:16px;"></i> ${date}</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button onclick="openProject('${p.id}')" style="padding:7px 13px;border:none;border-radius:6px;background:var(--accent-primary);color:white;font-weight:700;font-size:0.8rem;cursor:pointer;"><i class="fa-solid fa-cube"></i> Open 3D</button>
+            <a href="material-estimation.html?project=${encodeURIComponent(p.name)}" style="padding:7px 13px;border-radius:6px;background:var(--accent-secondary);color:white;font-weight:700;font-size:0.8rem;text-decoration:none;display:inline-flex;align-items:center;gap:5px;"><i class="fa-solid fa-calculator"></i> Estimate</a>
+            <button onclick="deleteProject('${p.id}')" style="padding:7px 11px;border:1px solid var(--border-color);border-radius:6px;background:white;color:#dc2626;font-size:0.8rem;cursor:pointer;"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function escHTML(v) {
+      const d = document.createElement('div');
+      d.textContent = String(v ?? '');
+      return d.innerHTML;
+    }
+
+    function openProject(id) {
+      const project = getProjects().find(p => p.id === id);
+      if (!project) return;
+      currentL = project.length;
+      currentW = project.width;
+      document.getElementById('existing-projects-panel').style.display = 'none';
+      document.getElementById('3d-card').style.display = 'block';
+      if (triggerThreeJSResize) triggerThreeJSResize();
+      if (window.buildHouseParametric) {
+        window.buildHouseParametric(project.length, project.width, project.floors, project.style || 'classic', project.facade || 'concrete', project.windows || 'medium');
+      }
+      showToast(`Loaded: ${project.name}`);
+    }
+
+    function showNewProject() {
+      document.getElementById('existing-projects-panel').style.display = 'none';
+      document.getElementById('3d-card').style.display = 'none';
+      document.getElementById('materials-card').style.display = 'none';
+      document.getElementById('new-project-panel').style.display = 'block';
+    }
+
+    function showExistingProject() {
+      document.getElementById('new-project-panel').style.display = 'none';
+      document.getElementById('3d-card').style.display = 'none';
+      document.getElementById('materials-card').style.display = 'none';
+      document.getElementById('existing-projects-panel').style.display = 'block';
+      loadProjectsPanel();
+    }
+
+    // General UI scripts
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('collapsed');
+      document.getElementById('main-wrapper').classList.toggle('expanded');
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById("toast");
+      toast.innerText = msg;
+      toast.className = "show";
+      setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
+    }
+    
+    function showNewProject() {
+      document.getElementById('existing-projects-panel').style.display = 'none';
+      document.getElementById('3d-card').style.display = 'none';
+      document.getElementById('materials-card').style.display = 'none';
+      document.getElementById('new-project-panel').style.display = 'block';
+    }
+
+    function showExistingProject() {
+      document.getElementById('new-project-panel').style.display = 'none';
+      document.getElementById('3d-card').style.display = 'none';
+      document.getElementById('materials-card').style.display = 'none';
+      document.getElementById('existing-projects-panel').style.display = 'block';
+    }
+    
+    // Global variable for ThreeJS house group so we can dynamically scale it
+    let buildingMesh = null;
+    let buildingWings = [];
+    let triggerThreeJSResize = null; // function pointer for canvas fix
+
+    let currentL = 16;
+    let currentW = 10;
+    
+    function buildFromManual() {
+      const name = document.getElementById('project-name-input').value.trim();
+      if (!name) { alert('Please enter a project name before building.'); return; }
+      const l = parseFloat(document.getElementById('manual-length').value) || 24;
+      const w = parseFloat(document.getElementById('manual-width').value) || 16;
+      const floors = parseInt(document.getElementById('manual-floors').value) || 2;
+      const style = document.getElementById('manual-style').value || 'classic';
+      const facade = document.getElementById('manual-material').value || 'concrete';
+      const windowDensity = document.getElementById('manual-windows').value || 'medium';
+
+      currentL = l; currentW = w;
+
+      // Save to localStorage
+      const project = {
+        id: 'proj_' + Date.now(),
+        name, length: l, width: w, floors, style, facade,
+        windows: windowDensity, houseType: 'Villa',
+        createdAt: new Date().toISOString()
+      };
+      saveProject(project);
+      localStorage.setItem('activeProjectName', name);
+
+      document.getElementById('new-project-panel').style.display = 'none';
+      document.getElementById('3d-card').style.display = 'block';
+      if (triggerThreeJSResize) triggerThreeJSResize();
+      if (window.buildHouseParametric) {
+        window.buildHouseParametric(l, w, floors, style, facade, windowDensity);
+      }
+      showToast(`Project "${name}" saved & 3D model built!`);
+    }
+
+    async function handleSpecUpload(e) {
+      if(!e.target.files[0]) return;
+      const file = e.target.files[0].name;
+      const status = document.getElementById('upload-status');
+      status.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ';
+      status.appendChild(document.createTextNode(`AI parsing ${file} for dimensions and building specs...`));
+      
+      // Simulating AI parsing time for visual effect (since real file reading isn't wired up to backend)
+      setTimeout(() => {
+        let l = 30, w = 20, floors = 3; // Default extracted dims
+
+        // Quick heuristic to get realistic dimensions based on filename if they exist
+        const numbers = file.match(/\d+/g);
+        if (numbers && numbers.length >= 2) {
+          l = Math.max(parseFloat(numbers[0]), 10);
+          w = Math.max(parseFloat(numbers[1]), 8);
+          if (numbers.length >= 3) floors = Math.max(parseInt(numbers[2]), 1);
+        }
+
+        currentL = l; currentW = w;
+        
+        status.innerHTML = `<span style="color:#16a34a;"><i class="fa-solid fa-check"></i> Document analyzed! (Found: ${l}x${w}m, ${floors} floors)</span>`;
+        
+        setTimeout(() => {
+          const name = prompt("Enter a name for this new project:", file.split('.')[0] + " Project");
+          if (!name) {
+            status.innerHTML = '';
+            e.target.value = '';
+            return;
+          }
+
+          // Save to localStorage
+          const project = {
+            id: 'proj_' + Date.now(),
+            name: name, length: l, width: w, floors: floors,
+            style: 'modern', facade: 'glass', windows: 'high', houseType: 'Commercial',
+            createdAt: new Date().toISOString()
+          };
+          saveProject(project);
+          localStorage.setItem('activeProjectName', name);
+
+          // Act like a page redirect
+          document.getElementById('new-project-panel').style.display = 'none';
+          document.getElementById('3d-card').style.display = 'block';
+          if(triggerThreeJSResize) triggerThreeJSResize();
+          
+          // Rebuild the 3D model dynamically via global function hook
+          if(window.buildHouseParametric) {
+             window.buildHouseParametric(l, w, floors, 'modern', 'glass', 'high');
+          }
+          showToast(`Project "${name}" saved & 3D model built!`);
+          status.innerHTML = '';
+          e.target.value = '';
+        }, 800);
+
+      }, 2500); // 2.5 second simulated delay
+    }
+    
+    function triggerEstimation() {
+      const prompt = `Based on a building size of ${currentL}m length x ${currentW}m width, estimate exact materials needed: Cement (bags), Bricks (units), Sand (tons/bags), and Labor (hours). Include a brief cost summary.`;
+      
+      // Save prompt for AI assistant to pick up
+      localStorage.setItem('autoStartEstimate', prompt);
+      
+      showToast('Redirecting to AI Assistant for dynamic estimation...');
+      
+      // Redirect to AI Assistant
+      setTimeout(() => {
+        window.location.href = 'ai-assistant-v2.html';
+      }, 800);
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById("toast");
+      toast.innerText = msg;
+      toast.className = "show";
+      setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
+    }
+
+    // Custom CIH 3D Builder Demo Integration
+    (function () {
+      const host = document.getElementById('builderStage');
+      if (!host || typeof THREE === 'undefined') return;
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(host.clientWidth, host.clientHeight);
+      host.appendChild(renderer.domElement);
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xffffff);
+      scene.fog = new THREE.Fog(0xffffff, 35, 85);
+
+      const camera = new THREE.PerspectiveCamera(45, host.clientWidth / host.clientHeight, 0.1, 200);
+      const target = new THREE.Vector3(0, 6, 0);
+      const orbit = { theta: 0.9, phi: 1.08, radius: 28, drag: false, px: 0, py: 0, auto: 0.0018 };
+
+      const hemi = new THREE.HemisphereLight(0xbfe6ff, 0x203050, 1.15);
+      scene.add(hemi);
+
+      const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+      sun.position.set(18, 24, 10);
+      sun.castShadow = false;
+      scene.add(sun);
+
+      const ambient = new THREE.AmbientLight(0x8ab4ff, 0.25);
+      scene.add(ambient);
+
+      const ground = new THREE.Mesh(
+        new THREE.PlaneGeometry(90, 90),
+        new THREE.MeshPhongMaterial({ color: 0x101b30, shininess: 10 })
+      );
+      ground.rotation.x = -Math.PI / 2;
+      ground.position.y = 0;
+      scene.add(ground);
+
+      const grid = new THREE.GridHelper(80, 40, 0x2c4e76, 0x19304d);
+      grid.position.y = 0.01;
+      scene.add(grid);
+
+      const sitePad = new THREE.Mesh(
+        new THREE.BoxGeometry(22, 0.6, 16),
+        new THREE.MeshPhongMaterial({ color: 0x18263d })
+      );
+      sitePad.position.y = 0.3;
+      scene.add(sitePad);
+
+      let house = new THREE.Group();
+      let wireTargets = [];
+      let animatedParts = [];
+      
+      const glassMaterial = new THREE.MeshPhongMaterial({
+        color: 0x89d3ff,
+        emissive: 0x234d72,
+        transparent: true,
+        opacity: 0.65
+      });
+      const wallMaterial = new THREE.MeshStandardMaterial({ color: 0xf1efe7, roughness: 0.7, metalness: 0.05 });
+      const accentMaterial = new THREE.MeshStandardMaterial({ color: 0xff8f45, roughness: 0.4, metalness: 0.15 });
+      const roofMaterial = new THREE.MeshStandardMaterial({ color: 0x8c4d2c, roughness: 0.85, metalness: 0.02 });
+      const trimMaterial = new THREE.MeshStandardMaterial({ color: 0x21395d, roughness: 0.42, metalness: 0.2 });
+
+      function emitToast(message) {
+        if (typeof showToast === 'function') {
+          showToast(message);
+        } else {
+          console.log(message);
+        }
+      }
+
+      function addMesh(geometry, material, x, y, z) {
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.position.set(x, y, z);
+        house.add(mesh);
+        wireTargets.push(mesh);
+        return mesh;
+      }
+
+      // Initial Default Build
+      buildingMesh = addMesh(new THREE.BoxGeometry(16, 8, 10), wallMaterial, 0, 4.3, 0);
+      const wing1 = addMesh(new THREE.BoxGeometry(7, 6, 6), wallMaterial, 8.5, 3.3, 2);
+      const wing2 = addMesh(new THREE.BoxGeometry(5.2, 5.2, 4.2), wallMaterial, -7.3, 2.7, 2.5);
+      buildingWings = [wing1, wing2];
+
+      const roofMain = addMesh(new THREE.ConeGeometry(10.5, 4.4, 4), roofMaterial, 0, 10.5, 0);
+      roofMain.rotation.y = Math.PI / 4;
+      animatedParts.push({ mesh: roofMain, baseY: 10.5, explodedY: 14.5 });
+
+      house.position.y = 0;
+      scene.add(house);
+
+      // --- PARAMETRIC BUILDER FUNCTION ---
+      window.buildHouseParametric = function(l, w, floors, style = 'classic', facade = 'concrete', windowDensity = 'medium') {
+        // Remove existing house group
+        scene.remove(house);
+        house = new THREE.Group();
+        wireTargets = [];
+        animatedParts = [];
+        
+        const h = floors * 3.5; // 3.5m per floor for realism
+        
+        // Define realistic facade material based on selection
+        let currentWallMaterial;
+        if(facade === 'brick') {
+           currentWallMaterial = new THREE.MeshStandardMaterial({ color: 0x8b3e2f, roughness: 0.9, metalness: 0.0 });
+        } else if(facade === 'wood') {
+           currentWallMaterial = new THREE.MeshStandardMaterial({ color: 0x8b5a2b, roughness: 0.8, metalness: 0.05 });
+        } else {
+           currentWallMaterial = new THREE.MeshStandardMaterial({ color: 0xf1efe7, roughness: 0.7, metalness: 0.05 });
+        }
+        
+        // Foundation
+        const foundation = addMesh(new THREE.BoxGeometry(l + 1, 0.4, w + 1), new THREE.MeshPhongMaterial({ color: 0x4a4a4a }), 0, 0.2, 0);
+        
+        // Main Base block
+        addMesh(new THREE.BoxGeometry(l, h, w), currentWallMaterial, 0, (h/2) + 0.4, 0);
+        
+        // Dynamic roof
+        if(style === 'classic') {
+          const roofHeight = Math.max(l, w) * 0.25;
+          const mainRoof = addMesh(new THREE.ConeGeometry(1, 1, 4), roofMaterial, 0, h + 0.4 + (roofHeight/2), 0);
+          mainRoof.rotation.y = Math.PI / 4;
+          // Scale it to be a rectangular pyramid covering the house
+          mainRoof.scale.set((w + 2) * 0.7071, roofHeight, (l + 2) * 0.7071);
+          animatedParts.push({ mesh: mainRoof, baseY: h + 0.4 + (roofHeight/2), explodedY: h + 4.4 + (roofHeight/2) });
+        } else {
+          // Modern Flat Roof with parapet
+          const flatRoof = addMesh(new THREE.BoxGeometry(l + 0.5, 0.4, w + 0.5), new THREE.MeshPhongMaterial({ color: 0x222222 }), 0, h + 0.6, 0);
+          animatedParts.push({ mesh: flatRoof, baseY: h + 0.6, explodedY: h + 4.6 });
+        }
+        
+        // Front Door
+        addMesh(new THREE.BoxGeometry(2, 2.5, 0.1), new THREE.MeshStandardMaterial({ color: 0x2d1808 }), 0, 1.65, w/2 + 0.05);
+        
+        // Add doors/windows parametrically based on length and density
+        let windowSpacing = 4;
+        if(windowDensity === 'high') windowSpacing = 2.5;
+        if(windowDensity === 'low') windowSpacing = 6;
+        
+        const numWindows = Math.floor((l - 4) / windowSpacing);
+        for(let f=0; f<floors; f++) {
+          const floorY = (f * 3.5) + 0.4 + 1.5; // Window height per floor
+          for(let i=0; i<numWindows; i++) {
+             let wx = (-l/2 + 2) + (i * windowSpacing);
+             if (f === 0 && Math.abs(wx) < 1.5) continue; // Skip window where door is
+             
+             // Front windows
+             addMesh(new THREE.BoxGeometry(1.5, 2.0, 0.1), glassMaterial, wx, floorY, w/2 + 0.05);
+             // Back windows
+             addMesh(new THREE.BoxGeometry(1.5, 2.0, 0.1), glassMaterial, wx, floorY, -w/2 - 0.05);
+          }
+        }
+        
+        scene.add(house);
+        
+        // Adjust camera to fit the new parametric house nicely
+        orbit.radius = Math.max(l, w) * 1.6;
+        target.y = h / 2;
+        updateCamera();
+      };
+      
+      triggerThreeJSResize = resize;
+
+      function updateCamera() {
+        orbit.phi = Math.max(0.35, Math.min(1.45, orbit.phi));
+        orbit.radius = Math.max(13, Math.min(42, orbit.radius));
+        camera.position.x = target.x + orbit.radius * Math.sin(orbit.phi) * Math.cos(orbit.theta);
+        camera.position.y = target.y + orbit.radius * Math.cos(orbit.phi);
+        camera.position.z = target.z + orbit.radius * Math.sin(orbit.phi) * Math.sin(orbit.theta);
+        camera.lookAt(target);
+      }
+
+      function setWireframe(enabled) {
+        wireTargets.forEach((mesh) => {
+          mesh.material.wireframe = enabled;
+        });
+      }
+
+      const mode = { night: false, exploded: false, wire: false };
+
+      function applySceneMode(view) {
+        if (view === 'street') {
+          orbit.theta = 0.84;
+          orbit.phi = 1.08;
+          orbit.radius = 28;
+          mode.exploded = false;
+          mode.wire = false;
+          setWireframe(false);
+          emitToast('Street view restored.');
+        }
+        if (view === 'roof') {
+          orbit.theta = 0.78;
+          orbit.phi = 0.58;
+          orbit.radius = 24;
+          emitToast('Roof inspection angle selected.');
+        }
+        if (view === 'explode') {
+          mode.exploded = !mode.exploded;
+          emitToast(mode.exploded ? 'Exploded assembly enabled.' : 'Exploded assembly disabled.');
+        }
+        if (view === 'wire') {
+          mode.wire = !mode.wire;
+          setWireframe(mode.wire);
+          emitToast(mode.wire ? 'Wireframe enabled.' : 'Wireframe disabled.');
+        }
+        if (view === 'night') {
+          mode.night = !mode.night;
+          scene.background = new THREE.Color(mode.night ? 0x070d18 : 0xffffff);
+          hemi.intensity = mode.night ? 0.55 : 1.15;
+          sun.intensity = mode.night ? 0.45 : 1.2;
+          glassMaterial.emissive.setHex(mode.night ? 0x5fc0ff : 0x234d72);
+          emitToast(mode.night ? 'Night mode enabled.' : 'Day mode restored.');
+        }
+        if (view === 'ai-scan') {
+          emitToast('AI Analyzing Structural Integrity...');
+          // Visual effect: temporary wireframe with color pulse
+          mode.wire = true;
+          setWireframe(true);
+          scene.background = new THREE.Color(0x000000);
+          hemi.intensity = 0.2;
+          
+          let scanPasses = 0;
+          const scanInterval = setInterval(() => {
+            glassMaterial.emissive.setHex(scanPasses % 2 === 0 ? 0x00ff00 : 0xff0000);
+            scanPasses++;
+            if(scanPasses > 5) {
+              clearInterval(scanInterval);
+              applySceneMode('reset');
+              emitToast('AI Analysis Complete. Structure passes safety margins.');
+            }
+          }, 400);
+        }
+        if (view === 'reset') {
+          mode.night = false;
+          mode.exploded = false;
+          mode.wire = false;
+          setWireframe(false);
+          scene.background = new THREE.Color(0xffffff);
+          hemi.intensity = 1.15;
+          sun.intensity = 1.2;
+          glassMaterial.emissive.setHex(0x234d72);
+          orbit.theta = 0.9;
+          orbit.phi = 1.08;
+          orbit.radius = 28;
+          emitToast('Builder reset complete.');
+        }
+        updateCamera();
+      }
+
+      document.querySelectorAll('[data-builder-view]').forEach((button) => {
+        button.addEventListener('click', () => applySceneMode(button.dataset.builderView));
+      });
+
+      host.addEventListener('pointerdown', (event) => {
+        orbit.drag = true;
+        orbit.px = event.clientX;
+        orbit.py = event.clientY;
+      });
+
+      window.addEventListener('pointerup', () => {
+        orbit.drag = false;
+      });
+
+      window.addEventListener('pointermove', (event) => {
+        if (!orbit.drag) return;
+        const dx = event.clientX - orbit.px;
+        const dy = event.clientY - orbit.py;
+        orbit.px = event.clientX;
+        orbit.py = event.clientY;
+        orbit.theta -= dx * 0.006;
+        orbit.phi += dy * 0.005;
+        updateCamera();
+      });
+
+      host.addEventListener('wheel', (event) => {
+        event.preventDefault();
+        orbit.radius += event.deltaY * 0.015;
+        updateCamera();
+      }, { passive: false });
+
+      function resize() {
+        renderer.setSize(host.clientWidth, host.clientHeight);
+        camera.aspect = host.clientWidth / host.clientHeight;
+        camera.updateProjectionMatrix();
+      }
+
+      window.addEventListener('resize', resize);
+      updateCamera();
+
+      function animate() {
+        requestAnimationFrame(animate);
+        if (!orbit.drag) {
+          orbit.theta += orbit.auto;
+          updateCamera();
+        }
+        animatedParts.forEach((part) => {
+          const targetY = mode.exploded ? part.explodedY : part.baseY;
+          part.mesh.position.y += (targetY - part.mesh.position.y) * 0.08;
+        });
+        renderer.render(scene, camera);
+      }
+
+      animate();
+    })();
+  </script>
+</body>
+</html>

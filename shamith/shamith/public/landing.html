@@ -1,0 +1,318 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ACRA - Agentic AI for Safety Monitoring with Construction Risk Analytics</title>
+  <!-- Libre Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Libre+Franklin:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    :root {
+      --bg-main: #ffffff;
+      --bg-secondary: #f8fafc;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      
+      --accent-primary: #f97316;       /* Orange */
+      --accent-secondary: #1e3a8a;     /* Deep Blue */
+      --accent-light: #38bdf8;         /* Light Blue */
+      
+      --border-color: #e2e8f0;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Libre Franklin', sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      font-family: 'Libre Baskerville', serif;
+      color: var(--accent-secondary);
+    }
+
+    /* ── Navigation ───────────────────────────────────────────────── */
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 24px 48px;
+      background-color: var(--bg-main);
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand i {
+      font-size: 2rem;
+      color: var(--accent-primary);
+    }
+
+    .brand-text {
+      font-family: 'Libre Baskerville', serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      align-items: center;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: var(--text-main);
+      font-weight: 500;
+      font-size: 1rem;
+      transition: color 0.3s;
+    }
+
+    .nav-links a:hover {
+      color: var(--accent-primary);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 28px;
+      background-color: var(--accent-primary);
+      color: #ffffff !important;
+      text-decoration: none;
+      border-radius: 6px;
+      font-weight: 600;
+      transition: background-color 0.3s;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      background-color: #ea580c;
+    }
+
+    .btn-secondary {
+      background-color: var(--accent-secondary);
+    }
+    
+    .btn-secondary:hover {
+      background-color: #172554;
+    }
+
+    /* ── Hero Section ─────────────────────────────────────────────── */
+    .hero {
+      padding: 120px 48px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+    }
+
+    .hero h1 {
+      font-size: 4.5rem;
+      line-height: 1.1;
+      margin-bottom: 24px;
+      max-width: 1000px;
+    }
+
+    .hero h1 span {
+      color: var(--accent-primary);
+    }
+
+    .hero p {
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      max-width: 700px;
+      margin-bottom: 48px;
+    }
+
+    .hero-buttons {
+      display: flex;
+      gap: 16px;
+    }
+
+    /* ── Features Section ─────────────────────────────────────────── */
+    .features {
+      padding: 100px 48px;
+      background-color: var(--bg-main);
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 64px;
+    }
+
+    .section-header h2 {
+      font-size: 2.5rem;
+      margin-bottom: 16px;
+    }
+
+    .section-header p {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 32px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .feature-card {
+      background-color: var(--bg-secondary);
+      padding: 40px;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--accent-light);
+    }
+
+    .feature-card i {
+      font-size: 2.5rem;
+      color: var(--accent-primary);
+      margin-bottom: 24px;
+    }
+
+    .feature-card h3 {
+      font-size: 1.5rem;
+      margin-bottom: 16px;
+    }
+
+    .feature-card p {
+      color: var(--text-muted);
+    }
+
+    /* ── Footer ───────────────────────────────────────────────────── */
+    footer {
+      background-color: var(--bg-secondary);
+      padding: 60px 48px;
+      border-top: 1px solid var(--border-color);
+      text-align: center;
+    }
+
+    .footer-brand {
+      margin-bottom: 24px;
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="brand">
+      <i class="fa-solid fa-helmet-safety"></i>
+      <div class="brand-text">ACRA Platform</div>
+    </div>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#about">About</a>
+      <a href="dashboard.html" class="btn">Enter Dashboard <i class="fa-solid fa-arrow-right"></i></a>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <h1>The Ultimate <span>Construction</span> Intelligence Platform</h1>
+    <p>Leverage local AI models, predictive risk analysis, dynamic 3D spatial packing, and live meteorological data to build safer, faster, and smarter.</p>
+    <div class="hero-buttons">
+      <a href="dashboard.html" class="btn">Launch Terminal Application</a>
+      <a href="#features" class="btn btn-secondary">Explore Modules</a>
+    </div>
+  </section>
+
+  <section id="features" class="features">
+    <div class="section-header">
+      <h2>Engineering Modules</h2>
+      <p>Discover the integrated suite of tools designed for the modern civil engineer.</p>
+    </div>
+    
+    <div class="feature-grid">
+      <div class="feature-card">
+        <i class="fa-solid fa-calculator"></i>
+        <h3>Material Estimation</h3>
+        <p>Instantaneous, highly accurate takeoff calculations for cement, steel, bricks, and finishing materials utilizing industry-standard civil engineering parameters and spatial vectors.</p>
+      </div>
+      <div class="feature-card">
+        <i class="fa-solid fa-brain"></i>
+        <h3>Cognitive AI Core</h3>
+        <p>Integrated with local Llama 3.1 models. Interrogate blueprints, review specification codes, and generate executive reports without sending sensitive data to external servers.</p>
+      </div>
+      <div class="feature-card">
+        <i class="fa-solid fa-shield-halved"></i>
+        <h3>Safety & Risk Index</h3>
+        <p>Dynamic assessment algorithms to evaluate site safety compliance, pinpoint critical risks, and generate mitigation strategies before accidents happen.</p>
+      </div>
+      <div class="feature-card">
+        <i class="fa-solid fa-cube"></i>
+        <h3>3D Spatial Builder</h3>
+        <p>Visualize layout packing configurations natively in the browser using Three.js architecture simulations to optimize floor space utility.</p>
+      </div>
+      <div class="feature-card">
+        <i class="fa-solid fa-cloud-sun"></i>
+        <h3>Live Telemetry & Reporting</h3>
+        <p>Integrated OpenWeatherMap API allows you to automatically pull meteorological data to append to daily shift operational logs for accurate historical indexing.</p>
+      </div>
+      <div class="feature-card">
+        <i class="fa-solid fa-chart-pie"></i>
+        <h3>Cost Analytics</h3>
+        <p>Granular breakdown of budget distributions, identifying potential cost overruns and offering immediate value engineering substitutions.</p>
+      </div>
+      <div class="feature-card">
+        <i class="fa-solid fa-file-lines"></i>
+        <h3>AI Reporting Agent</h3>
+        <p>Automatically generates daily site reports, executive risk summaries, project health reports, and audit-ready documentation by consolidating insights from construction data and AI analysis.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-brand brand-text" style="color: var(--accent-secondary);">CIH Platform</div>
+    <p style="color: var(--text-muted);">&copy; 2026 Agentic AI for Safety Monitoring with Construction Risk Analytics. All rights reserved.</p>
+  </footer>
+
+  <script type="module">
+    import { supabase } from './auth.js';
+
+    // This catches the #access_token fragment when Supabase redirects here after email confirmation.
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' || session) {
+        window.location.href = 'dashboard.html';
+      }
+    });
+
+    // Also check on initial load in case the session is already active
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        window.location.href = 'dashboard.html';
+      }
+    });
+  </script>
+</body>
+</html>

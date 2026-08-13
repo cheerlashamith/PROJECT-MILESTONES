@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ACRA - AI Executive Reports</title>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Libre+Franklin:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="api-client.js"></script>
+  <script type="module" src="page-auth.js"></script>
+  <style>
+    :root { --bg-main:#f8fafc; --bg-card:#ffffff; --bg-sidebar:#ffffff; --text-main:#0f172a; --text-muted:#64748b; --accent-primary:#f97316; --accent-secondary:#1e3a8a; --border-color:#e2e8f0; --success:#16a34a; --error:#dc2626; --transition-speed:0.3s; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'Libre Franklin',sans-serif; background-color:var(--bg-main); color:var(--text-main); display:flex; min-height:100vh; overflow-x:hidden; }
+    h1,h2,h3,h4,h5,h6 { font-family:'Libre Baskerville',serif; color:var(--accent-secondary); }
+    #sidebar { width:280px; background-color:var(--bg-sidebar); border-right:1px solid var(--border-color); display:flex; flex-direction:column; height:100vh; position:fixed; left:0; top:0; transition:transform var(--transition-speed) ease; z-index:1000; overflow-y:auto; }
+    #sidebar.collapsed { transform:translateX(-280px); }
+    .sidebar-header { padding:24px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border-color); }
+    .brand-logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
+    .brand-logo i { color:var(--accent-primary); font-size:1.8rem; }
+    .brand-title { font-family:'Libre Baskerville',serif; font-weight:700; font-size:1.25rem; color:var(--accent-secondary); }
+    .close-sidebar-btn { background:none; border:none; color:var(--text-muted); font-size:1.2rem; cursor:pointer; }
+    .sidebar-menu { padding:20px 0; display:flex; flex-direction:column; gap:5px; }
+    .menu-group-title { padding:10px 24px; font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; }
+    .menu-item { display:flex; align-items:center; gap:12px; padding:12px 24px; color:var(--text-main); text-decoration:none; font-weight:500; transition:all var(--transition-speed); border-left:4px solid transparent; }
+    .menu-item:hover,.menu-item.active { color:var(--accent-secondary); background-color:#f1f5f9; border-left-color:var(--accent-primary); }
+    .menu-item i { font-size:1.1rem; width:20px; color:var(--accent-primary); }
+    #main-wrapper { flex:1; margin-left:280px; transition:margin-left var(--transition-speed) ease; display:flex; flex-direction:column; min-height:100vh; }
+    #main-wrapper.expanded { margin-left:0; }
+    header { background-color:var(--bg-card); height:70px; border-bottom:1px solid var(--border-color); display:flex; align-items:center; justify-content:space-between; padding:0 30px; position:sticky; top:0; z-index:900; }
+    .toggle-sidebar-btn { background:none; border:none; color:var(--accent-secondary); font-size:1.4rem; cursor:pointer; }
+    .content-container { padding:40px; flex:1; max-width:1400px; width:100%; margin:0 auto; }
+    .card { background-color:var(--bg-card); border:1px solid var(--border-color); border-radius:10px; padding:28px; margin-bottom:24px; box-shadow:0 1px 4px rgba(0,0,0,0.06); }
+    .form-group { margin-bottom:20px; }
+    .form-label { display:block; font-size:0.85rem; font-weight:700; color:var(--text-main); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px; }
+    .form-control { width:100%; padding:12px 14px; border:1.5px solid var(--border-color); border-radius:8px; font-family:inherit; font-size:0.95rem; transition:border-color 0.2s; }
+    .form-control:focus { outline:none; border-color:var(--accent-primary); box-shadow:0 0 0 3px rgba(249,115,22,0.1); }
+    textarea.form-control { resize:vertical; }
+    .btn { padding:12px 24px; border:none; border-radius:8px; font-weight:700; cursor:pointer; transition:all 0.2s; display:inline-flex; align-items:center; gap:8px; font-size:0.95rem; }
+    .btn:hover { transform:translateY(-1px); }
+    .btn:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+    .btn-primary { background-color:var(--accent-primary); color:white; }
+    .btn-primary:hover { background-color:#ea580c; }
+    .btn-secondary { background-color:var(--accent-secondary); color:white; }
+    .btn-secondary:hover { background-color:#1e40af; }
+    .btn-outline { background-color:transparent; border:1.5px solid var(--border-color); color:var(--text-main); }
+    .btn-outline:hover { background-color:#f1f5f9; }
+
+    /* File upload zone */
+    .upload-zone { border:2px dashed var(--border-color); border-radius:8px; padding:20px; text-align:center; cursor:pointer; transition:all 0.2s; background:#fafafa; }
+    .upload-zone:hover { border-color:var(--accent-primary); background:#fff7ed; }
+    .upload-zone.has-file { border-color:var(--success); background:#f0fdf4; }
+    .upload-zone i { font-size:2rem; color:var(--text-muted); margin-bottom:8px; }
+    .upload-zone.has-file i { color:var(--success); }
+    .upload-zone p { font-size:0.9rem; color:var(--text-muted); }
+    .upload-zone.has-file p { color:var(--success); font-weight:600; }
+
+    /* Status */
+    .status-msg { padding:14px 18px; border-radius:8px; font-weight:600; display:flex; align-items:center; gap:10px; margin:16px 0; }
+    .status-generating { background:#fffbeb; border:1px solid #fbbf24; color:#92400e; }
+    .status-success { background:#f0fdf4; border:1px solid #86efac; color:#166534; }
+    .status-error { background:#fef2f2; border:1px solid #fca5a5; color:#991b1b; }
+
+    /* Report output */
+    .report-output { background:#f8fafc; border:1.5px solid var(--border-color); border-radius:8px; padding:24px; font-size:0.95rem; line-height:1.8; max-height:560px; overflow-y:auto; }
+    .report-output h2 { font-size:1.2rem; margin:20px 0 8px; color:var(--accent-secondary); border-bottom:1px solid var(--border-color); padding-bottom:6px; }
+    .report-output h3 { font-size:1.05rem; margin:16px 0 6px; color:var(--accent-secondary); }
+    .report-output ul { margin-left:20px; margin-top:6px; }
+    .report-output li { margin-bottom:4px; }
+    .report-output strong { color:var(--accent-secondary); }
+
+    /* Saved reports */
+    .saved-card { border-left:4px solid var(--accent-primary); padding:18px 20px; border-radius:0 8px 8px 0; background:white; border:1px solid var(--border-color); margin-bottom:14px; }
+    .saved-card h4 { margin-bottom:6px; font-size:0.95rem; }
+    .saved-card .meta { font-size:0.82rem; color:var(--text-muted); margin-bottom:10px; }
+    .saved-card .excerpt { font-size:0.88rem; color:#374151; line-height:1.5; max-height:60px; overflow:hidden; mask-image:linear-gradient(to bottom, black 50%, transparent); }
+    .saved-card-actions { display:flex; gap:8px; margin-top:12px; }
+  </style>
+</head>
+<body>
+  <aside id="sidebar">
+    <div class="sidebar-header"><a href="dashboard.html" class="brand-logo"><i class="fa-solid fa-helmet-safety"></i><div class="brand-title">ACRA Platform</div></a><button class="close-sidebar-btn" onclick="toggleSidebar()"><i class="fa-solid fa-xmark"></i></button></div>
+    <div class="sidebar-menu">
+      <div class="menu-group-title">Main</div>
+      <a href="dashboard.html" class="menu-item"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+      <a href="ai-assistant-v2.html" class="menu-item"><i class="fa-solid fa-robot"></i> AI Assistant</a>
+      <a href="projects.html" class="menu-item"><i class="fa-solid fa-folder"></i> Projects</a>
+      <div class="menu-group-title">AI Modules</div>
+      <a href="risk-detection.html" class="menu-item"><i class="fa-solid fa-triangle-exclamation"></i> Risk Detection</a>
+      <a href="material-estimation.html" class="menu-item"><i class="fa-solid fa-calculator"></i> Material Estimation</a>
+      <a href="daily-reports.html" class="menu-item"><i class="fa-solid fa-file-invoice"></i> Daily Reports</a>
+      <a href="project-qa.html" class="menu-item"><i class="fa-solid fa-circle-question"></i> Project Q&A</a>
+      <div class="menu-group-title">Management</div>
+      <a href="documents.html" class="menu-item"><i class="fa-solid fa-file-shield"></i> Documents</a>
+      <a href="ai-reports.html" class="menu-item active"><i class="fa-solid fa-file-contract"></i> AI Reports</a>
+      <a href="analytics.html" class="menu-item"><i class="fa-solid fa-chart-pie"></i> Analytics</a>
+      <a href="settings.html" class="menu-item"><i class="fa-solid fa-gear"></i> Settings</a>
+    </div>
+  </aside>
+
+  <main id="main-wrapper">
+    <header>
+      <div style="display: flex; align-items: center; gap: 15px;">
+        <button class="toggle-sidebar-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+        <div style="font-weight:600; color:var(--accent-secondary);"><i class="fa-solid fa-microchip" style="color:var(--accent-primary);margin-right:8px;"></i>AI Report Generator Active</div>
+      </div>
+    </header>
+
+    <div class="content-container">
+      <h1 style="font-size:2.2rem; margin-bottom:8px;">AI Executive Reports</h1>
+      <p style="font-size:1rem; color:var(--text-muted); margin-bottom:30px;">Generate comprehensive, audit-ready construction reports. Upload a spec document or enter notes — the AI produces a full professional report.</p>
+
+      <div class="card" style="border-top:4px solid var(--accent-primary);">
+        <h3 style="margin-bottom:22px;"><i class="fa-solid fa-file-waveform" style="color:var(--accent-primary);margin-right:10px;"></i>Generate Construction Report</h3>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+          <div class="form-group">
+            <label class="form-label">Project Name <span style="color:var(--error);">*</span></label>
+            <input type="text" id="project-name" class="form-control" placeholder="e.g. Villa Construction – Phase 1">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Report Type</label>
+            <select id="report-type" class="form-control">
+              <option>Executive Summary</option>
+              <option>Daily Site Report</option>
+              <option>Audit Documentation</option>
+              <option>Project Health Report</option>
+              <option>Executive Risk Summary</option>
+              <option>Material & Cost Report</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Prepared By</label>
+            <input type="text" id="prepared-by" class="form-control" placeholder="Engineer / Project Manager Name">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Report Date</label>
+            <input type="date" id="report-date" class="form-control">
+          </div>
+        </div>
+
+        <!-- Document Upload -->
+        <div class="form-group">
+          <label class="form-label">Upload Spec Document (Optional – gives AI full context)</label>
+          <div class="upload-zone" id="upload-zone" onclick="document.getElementById('doc-upload').click()">
+            <input type="file" id="doc-upload" style="display:none;" accept=".txt,.md,.csv" onchange="handleDocUpload(event)">
+            <i class="fa-solid fa-file-arrow-up" id="upload-icon"></i>
+            <p id="upload-label">Click to upload .txt or .md specification file</p>
+            <p style="font-size:0.78rem; color:var(--text-muted); margin-top:4px;" id="upload-sub">File content is read locally and sent to the AI as context</p>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Additional Notes / Facts <span style="color:var(--text-muted); font-weight:400;">(the more detail, the better the report)</span></label>
+          <textarea id="notes" class="form-control" rows="6" placeholder="Enter construction notes, site observations, incident details, material info, or budget constraints here. The AI will NOT invent information — only what you provide will be used..."></textarea>
+        </div>
+
+        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="generateReport()" id="gen-btn">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Generate AI Report
+          </button>
+          <button class="btn btn-outline" onclick="clearForm()">
+            <i class="fa-solid fa-rotate-right"></i> Clear Form
+          </button>
+        </div>
+
+        <div id="status-msg" style="display:none;" class="status-msg status-generating">
+          <i class="fa-solid fa-spinner fa-spin"></i>
+          <span id="status-text">Sending to AI Engine...</span>
+        </div>
+      </div>
+
+      <!-- Report Output -->
+      <div id="report-output-card" class="card" style="display:none; border-top:4px solid var(--success);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+          <h3 style="margin:0; color:var(--success);"><i class="fa-solid fa-check-circle" style="margin-right:8px;"></i>Report Generated</h3>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn btn-secondary" onclick="downloadCurrentPDF()" id="download-btn">
+              <i class="fa-solid fa-file-pdf"></i> Download PDF
+            </button>
+            <button class="btn btn-outline" onclick="saveCurrentReport()">
+              <i class="fa-solid fa-floppy-disk"></i> Save Report
+            </button>
+          </div>
+        </div>
+        <div id="report-content-box" class="report-output"></div>
+      </div>
+
+      <!-- Saved Reports -->
+      <h3 style="margin-bottom:15px; color:var(--accent-secondary);"><i class="fa-solid fa-folder" style="margin-right:8px;"></i>Saved Reports</h3>
+      <div id="saved-reports-container">
+        <div class="card"><p style="color:var(--text-muted);">No saved reports yet. Generate one above.</p></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function toggleSidebar(){document.getElementById('sidebar').classList.toggle('collapsed');document.getElementById('main-wrapper').classList.toggle('expanded');}
+
+    document.getElementById('report-date').value = new Date().toISOString().split('T')[0];
+
+    let uploadedDocText = '';
+    let currentReport = null;
+
+    function handleDocUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const zone = document.getElementById('upload-zone');
+      const reader = new FileReader();
+      reader.onload = ev => {
+        uploadedDocText = ev.target.result;
+        zone.classList.add('has-file');
+        document.getElementById('upload-icon').className = 'fa-solid fa-circle-check';
+        document.getElementById('upload-label').textContent = `✅ Loaded: ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+        document.getElementById('upload-sub').textContent = 'Document content will be sent to the AI Engine as project context';
+        // Auto-populate notes if empty
+        const notesEl = document.getElementById('notes');
+        if (!notesEl.value.trim()) {
+          notesEl.value = uploadedDocText.slice(0, 4000);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function showStatus(type, text) {
+      const el = document.getElementById('status-msg');
+      el.className = `status-msg status-${type}`;
+      el.style.display = 'flex';
+      const icons = { generating: 'fa-spinner fa-spin', success: 'fa-check-circle', error: 'fa-circle-exclamation' };
+      el.querySelector('i').className = `fa-solid ${icons[type]}`;
+      document.getElementById('status-text').textContent = text;
+    }
+
+    function renderMarkdown(text) {
+      return text
+        .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+        .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+        .replace(/^# (.+)$/gm, '<h2>$1</h2>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/^[-•] (.+)$/gm, '<li>$1</li>')
+        .replace(/(<li>.*<\/li>\n?)+/g, m => `<ul>${m}</ul>`)
+        .replace(/\n{2,}/g, '<br><br>');
+    }
+
+    async function generateReport() {
+      const projectName = document.getElementById('project-name').value.trim();
+      if (!projectName) {
+        alert('Please enter a project name.');
+        return;
+      }
+      const btn = document.getElementById('gen-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating...';
+      showStatus('generating', 'The AI is composing your report. This may take a few moments...');
+      document.getElementById('report-output-card').style.display = 'none';
+
+      let notes = document.getElementById('notes').value.trim();
+      if (uploadedDocText && !notes.includes(uploadedDocText.slice(0, 50))) {
+        notes = uploadedDocText.slice(0, 8000) + (notes ? '\n\nADDITIONAL NOTES:\n' + notes : '');
+      }
+
+      try {
+        const result = await CIHApi.submitTask('/api/reports/generate', {
+          project_name: projectName,
+          report_type: document.getElementById('report-type').value,
+          prepared_by: document.getElementById('prepared-by').value,
+          report_date: document.getElementById('report-date').value,
+          notes: notes || 'No specific notes provided.'
+        }, { timeoutMs: 5 * 60_000 });
+
+        currentReport = {
+          id: Date.now(),
+          title: `${document.getElementById('report-type').value} – ${projectName}`,
+          projectName,
+          reportType: document.getElementById('report-type').value,
+          preparedBy: document.getElementById('prepared-by').value,
+          reportDate: document.getElementById('report-date').value,
+          date: new Date().toLocaleString(),
+          content: String(result)
+        };
+
+        document.getElementById('report-content-box').innerHTML = renderMarkdown(currentReport.content);
+        document.getElementById('report-output-card').style.display = 'block';
+        document.getElementById('report-output-card').scrollIntoView({ behavior: 'smooth' });
+        showStatus('success', 'Report generated successfully! Download the PDF or save it.');
+      } catch(e) {
+        showStatus('error', '❌ ' + e.message);
+      }
+
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Generate AI Report';
+    }
+
+    function clearForm() {
+      document.getElementById('project-name').value = '';
+      document.getElementById('notes').value = '';
+      uploadedDocText = '';
+      document.getElementById('upload-zone').classList.remove('has-file');
+      document.getElementById('upload-icon').className = 'fa-solid fa-file-arrow-up';
+      document.getElementById('upload-label').textContent = 'Click to upload .txt or .md specification file';
+      document.getElementById('upload-sub').textContent = 'File content is read locally and sent to the AI as context';
+      document.getElementById('status-msg').style.display = 'none';
+      document.getElementById('report-output-card').style.display = 'none';
+    }
+
+    function saveCurrentReport() {
+      if (!currentReport) return;
+      const reports = JSON.parse(localStorage.getItem('aiReports') || '[]');
+      reports.unshift(currentReport);
+      localStorage.setItem('aiReports', JSON.stringify(reports));
+      loadSavedReports();
+      showStatus('success', 'Report saved to local storage.');
+    }
+
+    function buildPDFElement(r) {
+      const el = document.createElement('div');
+      el.style.cssText = 'padding:40px;font-family:Arial,sans-serif;color:#0f172a;background:#fff;';
+      const formatted = r.content
+        .replace(/### (.+)/g, '<h4 style="color:#1e3a8a;margin:18px 0 8px;font-size:14px;">$1</h4>')
+        .replace(/## (.+)/g, '<h3 style="color:#1e3a8a;margin:22px 0 10px;border-bottom:1px solid #e2e8f0;padding-bottom:5px;font-size:16px;">$1</h3>')
+        .replace(/# (.+)/g, '<h2 style="color:#1e3a8a;margin:28px 0 12px;font-size:20px;">$1</h2>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>');
+      el.innerHTML = `
+        <div style="border-bottom:3px solid #1e3a8a;padding-bottom:18px;margin-bottom:28px;display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <h1 style="color:#1e3a8a;font-size:24px;margin:0;font-weight:700;">ACRA Platform</h1>
+            <p style="color:#f97316;font-weight:700;margin:6px 0 0;text-transform:uppercase;letter-spacing:1px;font-size:12px;">AI Executive Report</p>
+          </div>
+          <div style="text-align:right;font-size:12px;color:#64748b;">
+            <div>Project: <strong>${r.projectName}</strong></div>
+            <div>Report Date: <strong>${r.reportDate || 'N/A'}</strong></div>
+            <div>Prepared by: ${r.preparedBy || 'N/A'}</div>
+            <div>Generated: ${r.date}</div>
+          </div>
+        </div>
+        <h2 style="font-family:serif;color:#1e3a8a;font-size:18px;border-bottom:1px solid #1e3a8a;padding-bottom:10px;margin-bottom:20px;">${r.title}</h2>
+        <div style="line-height:1.7;font-size:13px;white-space:pre-wrap;">${formatted}</div>
+        <div style="margin-top:50px;border-top:1px solid #e2e8f0;padding-top:14px;text-align:center;font-size:11px;color:#94a3b8;font-style:italic;">
+          AI-generated by ACRA Platform. Confidential. Human review required for official use.
+        </div>`;
+      return el;
+    }
+
+    function savePDF(el, filename) {
+      html2pdf().set({
+        margin: [12, 12, 12, 12],
+        filename: filename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      }).from(el).save();
+    }
+
+    function downloadCurrentPDF() {
+      if (!currentReport) return;
+      savePDF(buildPDFElement(currentReport), `${currentReport.title.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'')}.pdf`);
+    }
+
+    function downloadSavedPDF(id) {
+      const reports = JSON.parse(localStorage.getItem('aiReports') || '[]');
+      const r = reports.find(x => Number(x.id) === Number(id));
+      if (!r) return;
+      savePDF(buildPDFElement(r), `${(r.title||'Report').replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'')}.pdf`);
+    }
+
+    function deleteReport(id) {
+      if (!confirm('Delete this report?')) return;
+      let reports = JSON.parse(localStorage.getItem('aiReports') || '[]');
+      reports = reports.filter(r => Number(r.id) !== Number(id));
+      localStorage.setItem('aiReports', JSON.stringify(reports));
+      loadSavedReports();
+    }
+
+    function escapeHTML(v) {
+      const d = document.createElement('div');
+      d.textContent = String(v ?? '');
+      return d.innerHTML;
+    }
+
+    function loadSavedReports() {
+      const container = document.getElementById('saved-reports-container');
+      const reports = JSON.parse(localStorage.getItem('aiReports') || '[]');
+      if (reports.length === 0) {
+        container.innerHTML = '<div class="card"><p style="color:var(--text-muted);">No saved reports yet. Generate and save one above.</p></div>';
+        return;
+      }
+      container.innerHTML = reports.map(r => {
+        const id = Number(r.id);
+        return `<div class="saved-card">
+          <h4><i class="fa-solid fa-file-contract" style="color:var(--accent-primary);margin-right:8px;"></i>${escapeHTML(r.title || 'Report')}</h4>
+          <div class="meta"><i class="fa-regular fa-clock"></i> ${escapeHTML(r.date)} &bull; ${escapeHTML(r.reportType || 'Report')}</div>
+          <div class="excerpt">${escapeHTML((r.content||'').slice(0,200))}</div>
+          <div class="saved-card-actions">
+            <button class="btn btn-secondary" style="padding:8px 14px;font-size:0.82rem;" onclick="downloadSavedPDF(${id})"><i class="fa-solid fa-file-pdf"></i> PDF</button>
+            <button class="btn btn-outline" style="padding:8px 14px;font-size:0.82rem;" onclick="deleteReport(${id})"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadSavedReports();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('autoDownload') === 'report') {
+        const activeProject = localStorage.getItem('activeProjectName');
+        if (activeProject) {
+          document.getElementById('project-name').value = activeProject;
+        } else {
+          document.getElementById('project-name').value = 'AI Auto Report';
+        }
+        
+        // Auto-generate the report
+        generateReport().then(() => {
+          // After it generates, auto-download
+          if (currentReport) {
+            setTimeout(downloadCurrentPDF, 1500);
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>

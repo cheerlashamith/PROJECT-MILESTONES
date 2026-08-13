@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ACRA - Compliance Agent</title>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Libre+Franklin:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="api-client.js"></script>
+  <script type="module" src="page-auth.js"></script>
+  
+  <style>
+    :root {
+      --bg-main: #f8fafc;
+      --bg-card: #ffffff;
+      --bg-sidebar: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      
+      --accent-primary: #f97316;
+      --accent-secondary: #1e3a8a;
+      --accent-light: #38bdf8;
+      
+      --border-color: #e2e8f0;
+      --transition-speed: 0.3s;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Libre Franklin', sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      display: flex;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    h1, h2, h3, h4, h5, h6 { font-family: 'Libre Baskerville', serif; color: var(--accent-secondary); }
+
+    /* Sidebar */
+    #sidebar { width: 280px; background-color: var(--bg-sidebar); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; height: 100vh; position: fixed; left: 0; top: 0; transition: transform var(--transition-speed) ease; z-index: 1000; overflow-y: auto; }
+    #sidebar.collapsed { transform: translateX(-280px); }
+    .sidebar-header { padding: 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); }
+    .brand-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .brand-logo i { color: var(--accent-primary); font-size: 1.8rem; }
+    .brand-title { font-family: 'Libre Baskerville', serif; font-weight: 700; font-size: 1.25rem; color: var(--accent-secondary); }
+    .close-sidebar-btn { background: none; border: none; color: var(--text-muted); font-size: 1.2rem; cursor: pointer; }
+    .sidebar-menu { padding: 20px 0; display: flex; flex-direction: column; gap: 5px; }
+    .menu-group-title { padding: 10px 24px; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+    .menu-item { display: flex; align-items: center; gap: 12px; padding: 12px 24px; color: var(--text-main); text-decoration: none; font-weight: 500; transition: all var(--transition-speed); border-left: 4px solid transparent; }
+    .menu-item:hover, .menu-item.active { color: var(--accent-secondary); background-color: #f1f5f9; border-left-color: var(--accent-primary); }
+    .menu-item i { font-size: 1.1rem; width: 20px; color: var(--accent-primary); }
+
+    /* Main Area */
+    #main-wrapper { flex: 1; margin-left: 280px; transition: margin-left var(--transition-speed) ease; display: flex; flex-direction: column; min-height: 100vh; }
+    #main-wrapper.expanded { margin-left: 0; }
+    header { background-color: var(--bg-card); height: 70px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; position: sticky; top: 0; z-index: 900; }
+    .toggle-sidebar-btn { background: none; border: none; color: var(--accent-secondary); font-size: 1.4rem; cursor: pointer; }
+    .content-container { padding: 40px; flex: 1; max-width: 1400px; width: 100%; margin: 0 auto; }
+    
+    .page-title { font-size: 2.2rem; margin-bottom: 8px; }
+    .page-subtitle { font-size: 1rem; color: var(--text-muted); margin-bottom: 30px; }
+
+    /* Cards */
+    .card { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .row { display: flex; flex-wrap: wrap; margin: 0 -10px; }
+    .col { flex: 1; padding: 0 10px; min-width: 300px; }
+
+    /* Forms */
+    .form-group { margin-bottom: 20px; }
+    .form-label { display: block; font-weight: 600; margin-bottom: 8px; color: var(--text-main); font-size: 0.9rem;}
+    .form-control { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; font-family: inherit; font-size: 1rem;}
+    .form-control:focus { outline: none; border-color: var(--accent-primary); box-shadow: 0 0 0 3px rgba(249,115,22,0.1); }
+    select.form-control { cursor: pointer; }
+    
+    .btn { padding: 12px 24px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; font-family: inherit;}
+    .btn-primary { background-color: var(--accent-primary); color: white; }
+    .btn-primary:hover { background-color: #ea580c; }
+    
+    /* Results */
+    .results-panel { display: none; margin-top: 24px; animation: fadeIn 0.5s; }
+    .status-badge { display: inline-block; padding: 4px 12px; border-radius: 100px; font-size: 0.85rem; font-weight: 700; text-transform: uppercase;}
+    .status-pass { background-color: #dcfce7; color: #166534; }
+    .status-warn { background-color: #fef9c3; color: #854d0e; }
+    .status-fail { background-color: #fee2e2; color: #991b1b; }
+    
+    .metric-value { font-size: 2.5rem; font-weight: 700; font-family: 'Libre Baskerville', serif; color: var(--accent-secondary); margin: 10px 0;}
+
+    ul.check-list { list-style: none; }
+    ul.check-list li { padding: 12px 0; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;}
+    ul.check-list li:last-child { border-bottom: none; }
+    
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Loader */
+    .loader { display: none; text-align: center; padding: 40px; }
+    .spinner { font-size: 2.5rem; color: var(--accent-primary); animation: spin 1s linear infinite; margin-bottom: 15px;}
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <aside id="sidebar">
+    <div class="sidebar-header">
+      <a href="dashboard.html" class="brand-logo">
+        <i class="fa-solid fa-helmet-safety"></i>
+        <div class="brand-title">ACRA Platform</div>
+      </a>
+      <button class="close-sidebar-btn" onclick="toggleSidebar()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    
+    <div class="sidebar-menu">
+      <div class="menu-group-title">Main</div>
+      <a href="dashboard.html" class="menu-item"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+      <a href="ai-assistant-v2.html" class="menu-item"><i class="fa-solid fa-robot"></i> AI Assistant</a>
+      <a href="projects.html" class="menu-item"><i class="fa-solid fa-folder"></i> Projects</a>
+      
+      <div class="menu-group-title">AI Modules</div>
+      <a href="risk-detection.html" class="menu-item"><i class="fa-solid fa-triangle-exclamation"></i> Risk Detection</a>
+      <a href="material-estimation.html" class="menu-item"><i class="fa-solid fa-calculator"></i> Material Estimation</a>
+      <a href="daily-reports.html" class="menu-item"><i class="fa-solid fa-file-invoice"></i> Daily Reports</a>
+      <a href="project-qa.html" class="menu-item"><i class="fa-solid fa-circle-question"></i> Project Q&A</a>
+      <a href="theme-generator.html" class="menu-item"><i class="fa-solid fa-palette"></i> Theme Visualizer</a>
+      <a href="compliance-agent.html" class="menu-item active"><i class="fa-solid fa-clipboard-check"></i> Compliance Agent</a>
+      <a href="insurance-agent.html" class="menu-item"><i class="fa-solid fa-shield-cat"></i> Insurance Agent</a>
+      
+      <div class="menu-group-title">Management</div>
+      <a href="documents.html" class="menu-item"><i class="fa-solid fa-file-shield"></i> Documents</a>
+      <a href="ai-reports.html" class="menu-item"><i class="fa-solid fa-file-contract"></i> AI Reports</a>
+      <a href="analytics.html" class="menu-item"><i class="fa-solid fa-chart-pie"></i> Analytics</a>
+      <a href="settings.html" class="menu-item"><i class="fa-solid fa-gear"></i> Settings</a>
+    </div>
+  </aside>
+
+  <main id="main-wrapper">
+    <header>
+      <div style="display: flex; align-items: center; gap: 15px;">
+        <button class="toggle-sidebar-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+        <div style="font-weight: 600; color: var(--accent-secondary);"><i class="fa-solid fa-clipboard-check" style="color:var(--accent-primary); margin-right:8px;"></i>AI Compliance Agent Active</div>
+      </div>
+    </header>
+
+    <div class="content-container">
+      <h1 class="page-title">Compliance Agent</h1>
+      <p class="page-subtitle">Validate regulatory compliance, monitor construction standards, and track inspection requirements.</p>
+
+      <div class="row">
+        <div class="col" style="flex: 1.2;">
+          <div class="card" style="border-top: 4px solid var(--accent-primary);">
+            <h3 style="margin-bottom: 20px;"><i class="fa-solid fa-magnifying-glass"></i> Input Inspection Parameters</h3>
+            
+            <form id="complianceForm">
+              <div class="row">
+                <div class="col form-group">
+                  <label class="form-label">Project Phase</label>
+                  <select class="form-control" id="phase" required>
+                    <option value="">Select Phase...</option>
+                    <option value="Foundation">Foundation & Excavation</option>
+                    <option value="Framing">Structural Framing</option>
+                    <option value="MEP">MEP Rough-in</option>
+                    <option value="Finishing">Interior Finishing</option>
+                  </select>
+                </div>
+                <div class="col form-group">
+                  <label class="form-label">Regulatory Standard</label>
+                  <select class="form-control" id="standard" required>
+                    <option value="OSHA">OSHA Safety Standards (Federal)</option>
+                    <option value="IBC">International Building Code (IBC)</option>
+                    <option value="EPA">EPA Environmental Regulations</option>
+                    <option value="Local">Local Municipal Code</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Site Audit Notes or Upload Path</label>
+                <textarea class="form-control" id="notes" rows="4" placeholder="Enter findings from the recent site walk-through, or refer to inspection document paths..."></textarea>
+              </div>
+
+              <button type="submit" class="btn btn-primary"><i class="fa-solid fa-microchip"></i> Run AI Compliance Check</button>
+            </form>
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="card" style="background-color: #f8fafc;">
+            <h4 style="margin-bottom: 15px;"><i class="fa-solid fa-circle-info"></i> How it Works</h4>
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 10px;">The Compliance Agent cross-references your active site audit notes against the selected regulatory standard.</p>
+            <ul style="color: var(--text-muted); font-size: 0.9rem; margin-left: 20px;">
+              <li>Detects potential policy violations</li>
+              <li>Tracks upcoming mandated inspection requirements</li>
+              <li>Generates audit-ready compliance scores</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="loader" id="loader">
+        <i class="fa-solid fa-circle-notch spinner"></i>
+        <h4 style="color: var(--accent-secondary);">Agentizing Data...</h4>
+        <p style="color: var(--text-muted);">Cross-referencing site logs with regulatory standards</p>
+      </div>
+
+      <div class="results-panel" id="resultsPanel">
+        <div class="row">
+          <div class="col">
+            <div class="card" style="text-align: center;">
+              <h4 style="color: var(--text-muted); text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px;">Overall Compliance Index</h4>
+              <div class="metric-value" id="resScore">92%</div>
+              <span class="status-badge" id="resStatus"></span>
+            </div>
+          </div>
+          <div class="col" style="flex: 2;">
+            <div class="card">
+              <h3 style="margin-bottom: 20px;">Detailed Findings</h3>
+              <ul class="check-list" id="findingsList">
+                <!-- Populated via JS -->
+              </ul>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card">
+          <h3 style="margin-bottom: 15px;">AI Recommendations & Required Actions</h3>
+          <p id="resActions" style="line-height: 1.8; color: var(--text-main);"></p>
+        </div>
+      </div>
+      
+    </div>
+  </main>
+
+  <script>
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('collapsed');
+      document.getElementById('main-wrapper').classList.toggle('expanded');
+    }
+
+    document.getElementById('complianceForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const phase = document.getElementById('phase').value;
+      const standard = document.getElementById('standard').value;
+      
+      document.getElementById('resultsPanel').style.display = 'none';
+      document.getElementById('loader').style.display = 'block';
+
+      try {
+        const result = await CIHApi.submitTask('/api/compliance/analyze', {
+          phase,
+          standard,
+          notes: document.getElementById('notes').value.trim()
+        });
+        document.getElementById('loader').style.display = 'none';
+        const score = Number(result.score || 0);
+        const statusText = String(result.status || 'NEEDS REVIEW').toUpperCase();
+        const badgeClass = statusText === 'PASSING' ? 'status-pass' : statusText === 'WARNING' ? 'status-warn' : 'status-fail';
+        const findings = Array.isArray(result.findings) ? result.findings : [];
+
+        // Update UI
+        document.getElementById('resScore').innerText = score + '%';
+        
+        const statusBadge = document.getElementById('resStatus');
+        statusBadge.innerText = statusText;
+        statusBadge.className = "status-badge " + badgeClass;
+
+        const list = document.getElementById('findingsList');
+        list.innerHTML = "";
+        findings.forEach(f => {
+            const findingStatus = String(f.status || 'FLAGGED').toUpperCase();
+            const color = findingStatus === 'PASS' ? '#16a34a' : findingStatus === 'FAIL' ? '#dc2626' : '#eab308';
+            const item = document.createElement('li');
+            const text = document.createElement('span');
+            text.textContent = String(f.text || 'Unspecified finding');
+            const state = document.createElement('span');
+            state.textContent = findingStatus;
+            state.style.cssText = `font-weight:600;font-size:0.85rem;color:${color}`;
+            item.append(text, state);
+            list.appendChild(item);
+        });
+
+        document.getElementById('resActions').textContent = String(result.actions || 'Professional review is required.');
+
+        document.getElementById('resultsPanel').style.display = 'block';
+
+      } catch (error) {
+        document.getElementById('loader').style.display = 'none';
+        document.getElementById('resultsPanel').style.display = 'block';
+        document.getElementById('resScore').innerText = '--';
+        document.getElementById('resStatus').innerText = 'ERROR';
+        document.getElementById('resActions').textContent = error.message;
+        document.getElementById('findingsList').innerHTML = '';
+      }
+    });
+  </script>
+</body>
+</html>

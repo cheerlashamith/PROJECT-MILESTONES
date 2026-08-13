@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ACRA - Material Estimation</title>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Libre+Franklin:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="api-client.js"></script>
+  <script type="module" src="page-auth.js"></script>
+  <style>
+    :root {
+      --bg-main:#f8fafc; --bg-card:#ffffff; --bg-sidebar:#ffffff; --text-main:#0f172a;
+      --text-muted:#64748b; --accent-primary:#f97316; --accent-secondary:#1e3a8a;
+      --border-color:#e2e8f0; --success:#16a34a; --transition-speed:0.3s;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'Libre Franklin',sans-serif; background-color:var(--bg-main); color:var(--text-main); display:flex; min-height:100vh; overflow-x:hidden; }
+    h1,h2,h3,h4,h5,h6 { font-family:'Libre Baskerville',serif; color:var(--accent-secondary); }
+    #sidebar { width:280px; background-color:var(--bg-sidebar); border-right:1px solid var(--border-color); display:flex; flex-direction:column; height:100vh; position:fixed; left:0; top:0; transition:transform var(--transition-speed) ease; z-index:1000; overflow-y:auto; }
+    #sidebar.collapsed { transform:translateX(-280px); }
+    .sidebar-header { padding:24px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border-color); }
+    .brand-logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
+    .brand-logo i { color:var(--accent-primary); font-size:1.8rem; }
+    .brand-title { font-family:'Libre Baskerville',serif; font-weight:700; font-size:1.25rem; color:var(--accent-secondary); }
+    .close-sidebar-btn { background:none; border:none; color:var(--text-muted); font-size:1.2rem; cursor:pointer; }
+    .sidebar-menu { padding:20px 0; display:flex; flex-direction:column; gap:5px; }
+    .menu-group-title { padding:10px 24px; font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; }
+    .menu-item { display:flex; align-items:center; gap:12px; padding:12px 24px; color:var(--text-main); text-decoration:none; font-weight:500; transition:all var(--transition-speed); border-left:4px solid transparent; }
+    .menu-item:hover,.menu-item.active { color:var(--accent-secondary); background-color:#f1f5f9; border-left-color:var(--accent-primary); }
+    .menu-item i { font-size:1.1rem; width:20px; color:var(--accent-primary); }
+    #main-wrapper { flex:1; margin-left:280px; transition:margin-left var(--transition-speed) ease; display:flex; flex-direction:column; min-height:100vh; }
+    #main-wrapper.expanded { margin-left:0; }
+    header { background-color:var(--bg-card); height:70px; border-bottom:1px solid var(--border-color); display:flex; align-items:center; justify-content:space-between; padding:0 30px; position:sticky; top:0; z-index:900; }
+    .toggle-sidebar-btn { background:none; border:none; color:var(--accent-secondary); font-size:1.4rem; cursor:pointer; }
+    .content-container { padding:40px; flex:1; max-width:1400px; width:100%; margin:0 auto; }
+    .card { background-color:var(--bg-card); border:1px solid var(--border-color); border-radius:10px; padding:28px; margin-bottom:24px; box-shadow:0 1px 4px rgba(0,0,0,0.06); }
+    .row { display:flex; flex-wrap:wrap; gap:20px; }
+    .col { flex:1; min-width:280px; }
+    .form-group { margin-bottom:20px; }
+    .form-label { display:block; font-size:0.85rem; font-weight:700; color:var(--text-main); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px; }
+    .form-control { width:100%; padding:12px 14px; border:1.5px solid var(--border-color); border-radius:8px; font-family:inherit; font-size:0.95rem; transition:border-color 0.2s; }
+    .form-control:focus { outline:none; border-color:var(--accent-primary); box-shadow:0 0 0 3px rgba(249,115,22,0.1); }
+    .btn { padding:11px 22px; border:none; border-radius:8px; font-weight:700; cursor:pointer; transition:all 0.2s; display:inline-flex; align-items:center; gap:8px; font-size:0.9rem; }
+    .btn:hover { transform:translateY(-1px); }
+    .btn:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+    .btn-primary { background-color:var(--accent-primary); color:white; }
+    .btn-primary:hover { background-color:#ea580c; }
+    .btn-secondary { background-color:var(--accent-secondary); color:white; }
+    .btn-secondary:hover { background-color:#1e40af; }
+    .btn-success { background-color:var(--success); color:white; }
+    .btn-outline { background-color:transparent; border:1.5px solid var(--border-color); color:var(--text-main); }
+    .btn-outline:hover { background-color:#f1f5f9; }
+    table { width:100%; border-collapse:collapse; margin-top:15px; }
+    th,td { padding:13px 16px; text-align:left; border-bottom:1px solid var(--border-color); font-size:0.94rem; }
+    th { background-color:#f8fafc; font-weight:700; color:var(--accent-secondary); text-transform:uppercase; font-size:0.8rem; letter-spacing:0.5px; }
+    tbody tr:hover { background-color:#f8fafc; }
+    .total-row { background:linear-gradient(135deg, var(--accent-secondary) 0%, #1e40af 100%); color:white; font-weight:700; }
+    .total-row td { color:white; font-size:1rem; }
+    /* AI Result box */
+    .ai-result-box { margin-top:20px; padding:20px; border-radius:8px; background:#f0fdf4; border-left:4px solid var(--success); font-size:0.95rem; line-height:1.7; display:none; }
+    .ai-result-box h3 { color:var(--success); font-size:1rem; margin-bottom:12px; }
+    .ai-result-box pre { white-space:pre-wrap; font-family:inherit; }
+    .ai-result-box strong { color:var(--accent-secondary); }
+    /* Cost breakdown */
+    .cost-category { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border-color); }
+    .cost-category:last-child { border-bottom:none; }
+    .cost-bar { height:6px; border-radius:3px; background:linear-gradient(90deg, var(--accent-primary), var(--accent-secondary)); margin-top:4px; }
+  </style>
+</head>
+<body>
+  <aside id="sidebar">
+    <div class="sidebar-header"><a href="dashboard.html" class="brand-logo"><i class="fa-solid fa-helmet-safety"></i><div class="brand-title">ACRA Platform</div></a><button class="close-sidebar-btn" onclick="toggleSidebar()"><i class="fa-solid fa-xmark"></i></button></div>
+    <div class="sidebar-menu">
+      <div class="menu-group-title">Main</div>
+      <a href="dashboard.html" class="menu-item"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+      <a href="ai-assistant-v2.html" class="menu-item"><i class="fa-solid fa-robot"></i> AI Assistant</a>
+      <a href="projects.html" class="menu-item"><i class="fa-solid fa-folder"></i> Projects</a>
+      <div class="menu-group-title">AI Modules</div>
+      <a href="risk-detection.html" class="menu-item"><i class="fa-solid fa-triangle-exclamation"></i> Risk Detection</a>
+      <a href="material-estimation.html" class="menu-item active"><i class="fa-solid fa-calculator"></i> Material Estimation</a>
+      <a href="daily-reports.html" class="menu-item"><i class="fa-solid fa-file-invoice"></i> Daily Reports</a>
+      <a href="project-qa.html" class="menu-item"><i class="fa-solid fa-circle-question"></i> Project Q&A</a>
+      <div class="menu-group-title">Management</div>
+      <a href="documents.html" class="menu-item"><i class="fa-solid fa-file-shield"></i> Documents</a>
+      <a href="ai-reports.html" class="menu-item"><i class="fa-solid fa-file-contract"></i> AI Reports</a>
+      <a href="analytics.html" class="menu-item"><i class="fa-solid fa-chart-pie"></i> Analytics</a>
+      <a href="settings.html" class="menu-item"><i class="fa-solid fa-gear"></i> Settings</a>
+    </div>
+  </aside>
+
+  <main id="main-wrapper">
+    <header>
+      <div style="display: flex; align-items: center; gap: 15px;">
+        <button class="toggle-sidebar-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+        <div style="font-weight:600; color:var(--accent-secondary);"><i class="fa-solid fa-calculator" style="color:var(--accent-primary);margin-right:8px;"></i>AI Material & Cost Estimator</div>
+      </div>
+    </header>
+
+    <div class="content-container">
+      <h1 style="font-size:2.2rem; margin-bottom:8px;">Material & Cost Estimation</h1>
+      <p style="font-size:1rem; color:var(--text-muted); margin-bottom:30px;">Civil engineering takeoff with AI value engineering analysis and PDF export.</p>
+
+      <!-- Project Parameters -->
+      <div class="card" style="border-left:4px solid var(--accent-primary);">
+        <h3 style="margin-bottom:22px;"><i class="fa-solid fa-sliders" style="color:var(--accent-primary);margin-right:10px;"></i>Project Parameters</h3>
+        <div class="row" style="margin-bottom:15px;">
+          <div class="col" style="flex:100%;">
+            <div class="form-group">
+              <label class="form-label" style="display:flex; justify-content:space-between;">
+                <span>Link to Saved Project</span>
+                <a href="projects.html" style="font-size:0.8rem; color:var(--accent-primary); text-decoration:none;"><i class="fa-solid fa-plus"></i> New Project</a>
+              </label>
+              <select id="project-selector" class="form-control" onchange="loadSelectedProject()">
+                <option value="">-- Standalone Calculation (Not Saved) --</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col">
+            <div class="form-group">
+              <label class="form-label">Built Area (sq ft)</label>
+              <input type="number" id="area" class="form-control" value="2500" min="1" oninput="scheduleCalculation()">
+            </div>
+          </div>
+          <div class="col">
+            <div class="form-group">
+              <label class="form-label">Number of Floors</label>
+              <input type="number" id="floors" class="form-control" value="2" min="1" oninput="scheduleCalculation()">
+            </div>
+          </div>
+          <div class="col">
+            <div class="form-group">
+              <label class="form-label">Structure Type</label>
+              <select id="type" class="form-control" onchange="scheduleCalculation()">
+                <option value="Single Story">Single Story</option>
+                <option value="Double Story">Double Story</option>
+                <option value="Villa" selected>Villa</option>
+                <option value="Apartment">Apartment</option>
+                <option value="Commercial">Commercial</option>
+              </select>
+            </div>
+          </div>
+          <div class="col">
+            <div class="form-group">
+              <label class="form-label">Report Title</label>
+              <input type="text" id="project-name" class="form-control" value="Standalone Estimate" placeholder="Enter report title">
+            </div>
+          </div>
+          <div class="col" style="display:flex; align-items:flex-end;">
+            <button class="btn" style="width:100%; height:42px; margin-bottom:15px;" onclick="scheduleCalculation()"><i class="fa-solid fa-calculator"></i> Calculate Estimates</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Materials Table -->
+      <div class="card" id="materials-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+          <h3 style="margin:0;"><i class="fa-solid fa-boxes-stacked" style="color:var(--accent-primary);margin-right:10px;"></i>Material Quantities Takeoff</h3>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn btn-outline" onclick="downloadMaterialCSV()"><i class="fa-solid fa-download"></i> Export CSV</button>
+            <button class="btn btn-secondary" onclick="downloadMaterialPDF()" id="mat-pdf-btn"><i class="fa-solid fa-file-pdf"></i> Download Material PDF</button>
+          </div>
+        </div>
+        <table id="materials-table-wrapper">
+          <thead>
+            <tr>
+              <th>Material</th>
+              <th>Qty</th>
+              <th>Unit</th>
+              <th>Unit Price</th>
+              <th>Subtotal</th>
+            </tr>
+          </thead>
+          <tbody id="materials-tbody">
+            <tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:30px;">Calculating...</td></tr>
+            <tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:30px;">Enter parameters and click Calculate...</td></tr>
+          </tbody>
+          <tfoot>
+            <tr class="total-row">
+              <td colspan="4" style="font-weight:700; font-size:1rem;">MATERIAL GRAND TOTAL</td>
+              <td id="materials-total" style="font-size:1.1rem;">$0</td>
+            </tr>
+          </tfoot>
+        </table>
+
+        <!-- AI Value Engineering -->
+        <div style="margin-top:24px; padding-top:20px; border-top:1px solid var(--border-color);">
+          <h3 style="margin-bottom:15px;"><i class="fa-solid fa-lightbulb" style="color:#eab308;margin-right:10px;"></i>AI Value Engineering</h3>
+          <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:20px; line-height:1.6;">Use OpenAI to analyze the generated material takeoff and suggest areas where alternative materials or structural adjustments could save costs.</p>
+          <button class="btn btn-secondary" id="ai-value-btn" onclick="runAIValueEngineering()">
+            <i class="fa-solid fa-microchip"></i> AI Value Engineering (via OpenAI)
+          </button>
+          <div id="ai-value-result" class="ai-result-box" style="display:none;margin-top:15px;"></div>
+        </div>
+      </div>
+
+      <!-- Cost Breakdown -->
+      <div class="card" id="costs-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+          <h3 style="margin:0;"><i class="fa-solid fa-chart-bar" style="color:var(--accent-primary);margin-right:10px;"></i>Full Cost Estimation Breakdown</h3>
+          <button class="btn btn-primary" onclick="downloadCostPDF()" id="cost-pdf-btn"><i class="fa-solid fa-file-pdf"></i> Download Cost PDF</button>
+        </div>
+        <div id="cost-breakdown-container">
+          <p style="color:var(--text-muted); text-align:center; padding:20px;">Cost data will appear after calculation...</p>
+        </div>
+        <div style="margin-top:20px; padding:20px; background:linear-gradient(135deg, var(--accent-secondary) 0%, #1e40af 100%); border-radius:10px; color:white; display:flex; justify-content:space-between; align-items:center;" id="total-cost-banner">
+          <div>
+            <div style="font-size:0.85rem; opacity:0.8; text-transform:uppercase; letter-spacing:1px;">Estimated Total Project Cost</div>
+            <div style="font-size:2rem; font-weight:700; font-family:'Libre Baskerville', serif;" id="grand-total-cost">$0</div>
+          </div>
+          <i class="fa-solid fa-coins" style="font-size:3rem; opacity:0.3;"></i>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('collapsed');
+      document.getElementById('main-wrapper').classList.toggle('expanded');
+    }
+
+    let calcTimer;
+    let lastData = null;
+    let savedProjects = [];
+
+    function initProjects() {
+      try {
+        savedProjects = JSON.parse(localStorage.getItem('acraProjects') || '[]');
+        const select = document.getElementById('project-selector');
+        savedProjects.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.id;
+          opt.textContent = p.name;
+          select.appendChild(opt);
+        });
+      } catch(e) {}
+    }
+
+    function loadSelectedProject() {
+      const pid = document.getElementById('project-selector').value;
+      const proj = savedProjects.find(p => p.id === pid);
+      if (proj) {
+        document.getElementById('project-name').value = proj.name;
+        document.getElementById('area').value = proj.area || 2500;
+        document.getElementById('floors').value = proj.floors || 2;
+        if(proj.type) document.getElementById('type').value = proj.type;
+        scheduleCalculation();
+      } else {
+        document.getElementById('project-name').value = 'Standalone Estimate';
+      }
+    }
+
+    function scheduleCalculation() {
+      clearTimeout(calcTimer);
+      calcTimer = setTimeout(performCalculation, 300);
+    }
+
+    function fmt(n, decimals = 2) {
+      return Number(n).toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+    }
+    function fmtInt(n) {
+      return Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 });
+    }
+
+    async function performCalculation() {
+      const area = parseFloat(document.getElementById('area').value) || 0;
+      const floors = parseInt(document.getElementById('floors').value) || 0;
+      const type = document.getElementById('type').value;
+      const tbody = document.getElementById('materials-tbody');
+
+      if (area <= 0 || floors <= 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px;">Enter valid area and floor count.</td></tr>';
+        return;
+      }
+
+      try {
+        const data = await CIHApi.json('/api/calculate', { area, floors, house_type: type });
+        lastData = data;
+        renderMaterials(data);
+        renderCosts(data);
+      } catch(e) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#dc2626;padding:20px;">❌ ${e.message}</td></tr>`;
+      }
+    }
+
+    function renderMaterials(data) {
+      const tbody = document.getElementById('materials-tbody');
+      const breakdown = (data.costs['Material Cost'] || {}).breakdown || {};
+      let html = '';
+      Object.entries(data.materials).forEach(([name, mat]) => {
+        const cost = breakdown[name] || { unit_price: 0, total: 0 };
+        html += `<tr>
+          <td><strong>${name}</strong><br><small style="color:var(--text-muted);">${mat.description || ''}</small></td>
+          <td>${fmtInt(mat.quantity)}</td>
+          <td>${mat.unit}</td>
+          <td>$${fmt(cost.unit_price)}</td>
+          <td>$${fmt(cost.total)}</td>
+        </tr>`;
+      });
+      tbody.innerHTML = html;
+      document.getElementById('materials-total').textContent = '$' + fmtInt(data.total_cost);
+    }
+
+    function renderCosts(data) {
+      const container = document.getElementById('cost-breakdown-container');
+      const total = data.total_cost || 0;
+      let html = '';
+      Object.entries(data.costs).forEach(([category, info]) => {
+        const val = info.value || 0;
+        const pct = total > 0 ? (val / total * 100) : 0;
+        const icons = { 'Material Cost': 'fa-boxes-stacked', 'Labour Cost': 'fa-people-group', 'Overhead': 'fa-building', 'Contractor Fee': 'fa-handshake' };
+        const icon = icons[category] || 'fa-circle-dollar-to-slot';
+        html += `<div class="cost-category">
+          <div style="flex:1;">
+            <div style="display:flex;align-items:center;gap:8px;font-weight:600;">
+              <i class="fa-solid ${icon}" style="color:var(--accent-primary);width:18px;"></i>
+              ${category}
+            </div>
+            <div class="cost-bar" style="width:${Math.min(100,pct)}%;"></div>
+          </div>
+          <div style="text-align:right;min-width:120px;">
+            <div style="font-weight:700;color:var(--accent-secondary);">$${fmtInt(val)}</div>
+            <div style="font-size:0.78rem;color:var(--text-muted);">${pct.toFixed(1)}%</div>
+          </div>
+        </div>`;
+      });
+      container.innerHTML = html;
+      document.getElementById('grand-total-cost').textContent = '$' + fmtInt(total);
+
+      const projId = document.getElementById('project-selector').value;
+      if (projId && savedProjects.length) {
+        const idx = savedProjects.findIndex(p => p.id === projId);
+        if (idx >= 0) {
+          savedProjects[idx].lastEstimate = { totalCost: total, date: new Date().toISOString() };
+          localStorage.setItem('acraProjects', JSON.stringify(savedProjects));
+        }
+      }
+    }
+
+    function getMaterialRows() {
+      const rows = [];
+      document.querySelectorAll('#materials-tbody tr').forEach(tr => {
+        const cells = tr.querySelectorAll('td');
+        if (cells.length >= 5) {
+          rows.push({
+            name: cells[0].querySelector('strong')?.textContent || cells[0].textContent,
+            qty: cells[1].textContent,
+            unit: cells[2].textContent,
+            price: cells[3].textContent,
+            subtotal: cells[4].textContent,
+          });
+        }
+      });
+      return rows;
+    }
+
+    function buildMaterialPDFElement() {
+      const projectName = document.getElementById('project-name').value || 'Construction Project';
+      const area = document.getElementById('area').value;
+      const floors = document.getElementById('floors').value;
+      const type = document.getElementById('type').value;
+      const aiText = document.getElementById('ai-value-result').innerText;
+
+      let rowsHtml = '';
+      let total = '$0';
+
+      if (lastData && lastData.materials) {
+        const breakdown = (lastData.costs['Material Cost'] || {}).breakdown || {};
+        let i = 0;
+        Object.entries(lastData.materials).forEach(([name, mat]) => {
+          const cost = breakdown[name] || { unit_price: 0, total: 0 };
+          rowsHtml += `<tr style="background:${i%2===0?'#f8fafc':'#fff'};">
+            <td style="padding:10px 12px;font-weight:600;">${name}</td>
+            <td style="padding:10px 12px;text-align:right;">${fmtInt(mat.quantity)}</td>
+            <td style="padding:10px 12px;">${mat.unit}</td>
+            <td style="padding:10px 12px;text-align:right;">$${fmt(cost.unit_price)}</td>
+            <td style="padding:10px 12px;text-align:right;font-weight:600;">$${fmt(cost.total)}</td>
+          </tr>`;
+          i++;
+        });
+        total = '$' + fmtInt(lastData.total_cost);
+      }
+
+      const el = document.createElement('div');
+      el.style.cssText = 'padding:40px;font-family:Arial,sans-serif;color:#0f172a;background:#fff;';
+      el.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:30px; border-bottom:2px solid #e2e8f0; padding-bottom:20px;">
+          <div>
+            <h1 style="color:#1e3a8a; margin:0 0 5px 0; font-size:24px;">ACRA Platform</h1>
+            <div style="font-size:14px; color:#64748b; font-weight:600; letter-spacing:1px;">MATERIAL QUANTITIES TAKEOFF REPORT</div>
+          </div>
+          <div style="text-align:right;">
+            <h2 style="margin:0 0 5px 0; font-size:18px;">${projectName}</h2>
+            <div style="font-size:12px; color:#64748b;">Structure: ${type} &bull; Area: ${area} sq ft &bull; Floors: ${floors}</div>
+          </div>
+        </div>
+        <div style="margin-bottom:20px; font-size:12px; display:flex; justify-content:space-between;">
+          <span><strong>Date:</strong> ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:24px;">
+          <thead><tr style="background:#1e3a8a;color:white;"><th style="padding:10px;text-align:left;">Material</th><th style="padding:10px;text-align:right;">Quantity</th><th style="padding:10px;">Unit</th><th style="padding:10px;text-align:right;">Unit Price</th><th style="padding:10px;text-align:right;">Subtotal</th></tr></thead>
+          <tbody>${rowsHtml || '<tr><td colspan="5" style="text-align:center;padding:20px;color:red;">Error: Calculation data missing.</td></tr>'}</tbody>
+        </table>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:30px;">
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:15px;width:300px;">
+            <div style="display:flex;justify-content:space-between;font-weight:700;font-size:14px;color:#1e3a8a;">
+              <span>GRAND TOTAL - MATERIAL COST</span>
+              <span>${total}</span>
+            </div>
+          </div>
+        </div>
+        ${aiText && !aiText.includes('Error:') ? `<h3 style="color:#1e3a8a;">AI Suggestions</h3><div style="background:#f0fdf4;padding:10px;font-size:12px;">${aiText}</div>` : ''}`;
+      return el;
+    }
+
+    function buildCostPDFElement() {
+      const projectName = document.getElementById('project-name').value || 'Construction Project';
+      const aiText = document.getElementById('ai-value-result').innerText;
+
+      let rowsHtml = '';
+      if (lastData && lastData.costs) {
+        let i = 0;
+        Object.entries(lastData.costs).forEach(([cat, info]) => {
+          const pct = ((info.value / lastData.total_cost) * 100).toFixed(1) + '%';
+          rowsHtml += `<tr style="background:${i%2===0?'#f8fafc':'#fff'};">
+            <td style="padding:10px;">${cat}</td>
+            <td style="padding:10px;text-align:right;">$${fmtInt(info.value)}</td>
+            <td style="padding:10px;text-align:right;">${pct}</td>
+          </tr>`;
+          i++;
+        });
+      }
+
+      const el = document.createElement('div');
+      el.style.cssText = 'padding:40px;font-family:Arial,sans-serif;color:#0f172a;background:#fff;';
+      el.innerHTML = `
+        <h2 style="color:#1e3a8a;">${projectName} - Cost Report</h2>
+        <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:24px;">
+          <thead><tr style="background:#1e3a8a;color:white;"><th style="padding:10px;text-align:left;">Category</th><th style="padding:10px;text-align:right;">Cost</th><th style="padding:10px;text-align:right;">%</th></tr></thead>
+          <tbody>${rowsHtml || '<tr><td colspan="3" style="text-align:center;padding:20px;color:red;">No cost data available.</td></tr>'}</tbody>
+        </table>
+        ${aiText && !aiText.includes('Error:') ? `<h3 style="color:#1e3a8a;">AI Suggestions</h3><div style="background:#f0fdf4;padding:10px;font-size:12px;">${aiText}</div>` : ''}`;
+      return el;
+    }
+
+    function savePDF(el, filename) {
+      html2pdf().set({
+        margin: [12, 12, 12, 12],
+        filename: filename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      }).from(el).save();
+    }
+
+    function downloadMaterialPDF() { savePDF(buildMaterialPDFElement(), 'Material_Takeoff.pdf'); }
+    function downloadCostPDF() { savePDF(buildCostPDFElement(), 'Cost_Report.pdf'); }
+    function downloadMaterialCSV() {
+      const rows = [['Material', 'Quantity', 'Unit', 'Unit Price', 'Subtotal']];
+      getMaterialRows().forEach(r => rows.push([r.name, r.qty, r.unit, r.price, r.subtotal]));
+      const csv = rows.map(r => r.join(',')).join('\n');
+      const link = document.createElement('a');
+      link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+      link.download = 'Material_Takeoff.csv';
+      link.click();
+    }
+
+    async function runAIValueEngineering() {
+      const btn = document.getElementById('ai-value-btn');
+      const res = document.getElementById('ai-value-result');
+      if (!lastData) return;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyzing...';
+      res.style.display = 'block';
+      res.innerHTML = 'Consulting OpenAI...';
+
+      try {
+        const result = await CIHApi.submitTask('/api/chat', { message: "Provide 3 value engineering tips for this material list.", project_context: JSON.stringify(lastData) });
+        res.innerHTML = `<h3><i class="fa-solid fa-lightbulb" style="color:#eab308;"></i> AI Insights</h3><pre>${result}</pre>`;
+      } catch (err) {
+        btn.disabled = false;
+        res.innerHTML = '<div style="color:#ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Error: ' + err.message + '</div>';
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      initProjects();
+      
+      const urlParams = new URLSearchParams(window.location.search);
+      const autoDownload = urlParams.get('autoDownload');
+
+      if (autoDownload) {
+        document.getElementById('materials-tbody').innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:30px;">Calculating auto-estimate...</td></tr>';
+        
+        // Auto-select active project if in chat context
+        const activeName = localStorage.getItem('activeProjectName');
+        if(activeName) {
+           const p = savedProjects.find(x => x.name === activeName);
+           if(p) {
+             document.getElementById('project-selector').value = p.id;
+             loadSelectedProject();
+           }
+        }
+
+        await performCalculation();
+        await runAIValueEngineering();
+        
+        // Wait briefly for DOM to render charts/tables before capturing PDF
+        setTimeout(() => {
+          if (autoDownload === 'material') {
+            downloadMaterialPDF();
+          } else if (autoDownload === 'cost') {
+            downloadCostPDF();
+          }
+        }, 500);
+      } else {
+        scheduleCalculation();
+      }
+    });
+  </script>
+</body>
+</html>

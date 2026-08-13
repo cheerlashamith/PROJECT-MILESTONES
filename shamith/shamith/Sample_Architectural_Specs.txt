@@ -1,0 +1,37 @@
+PROJECT ARCHITECTURAL SPECIFICATIONS & QUANTITIES
+=================================================
+Project Name: Riverside Luxury Villa Construction
+Document ID: BOQ-2026-04
+Date: August 10, 2026
+
+1. PROJECT PARAMETERS
+---------------------
+- Total Built Area: 3,200 sqft
+- Number of Floors: 2 (Ground + 1)
+- Structure Type: Villa (Reinforced Concrete Frame)
+- Location: Suburbs, Sector 4
+
+2. STRUCTURAL REQUIREMENTS
+--------------------------
+- Foundation: Strip footing with a depth of 4 feet.
+- Grade of Concrete: M25 for columns and beams, M20 for slabs.
+- Steel Reinforcement (Rebar): Fe500 grade steel.
+- Walls: 9-inch thick exterior brick masonry, 4.5-inch thick interior partition walls.
+
+3. FINISHING MATERIALS
+----------------------
+- Flooring (Ground Floor): Premium Italian Marble.
+- Flooring (First Floor): Vitrified tiles (2x2 ft).
+- Exterior Paint: Weather-resistant acrylic emulsion (2 coats).
+- Interior Paint: Premium washable plastic emulsion over wall putty.
+
+4. ESTIMATION NOTES FOR AI
+--------------------------
+Please analyze this document to determine the structural type, total built area, and floor count. Based on these parameters, provide a detailed material takeoff including estimated quantities and costs for:
+- Cement
+- Steel / Rebar
+- Bricks / Blocks
+- Sand and Aggregate
+- Paint and Finishes
+
+Total allocated budget for raw materials: $180,000 USD.

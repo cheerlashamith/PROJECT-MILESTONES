@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ACRA - Administrator Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Libre+Franklin:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root { --orange:#f97316; --blue:#1e3a8a; --bg:#f8fafc; --card:#fff; --border:#e2e8f0; --muted:#64748b; --danger:#dc2626; --success:#16a34a; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:'Libre Franklin',sans-serif; background:var(--bg); color:#0f172a; }
+    header { background:var(--card); border-bottom:1px solid var(--border); padding:18px 32px; display:flex; justify-content:space-between; align-items:center; gap:20px; }
+    h1,h2,h3 { font-family:'Libre Baskerville',serif; color:var(--blue); }
+    a { color:var(--blue); text-decoration:none; font-weight:600; }
+    main { max-width:1200px; margin:auto; padding:36px 24px; }
+    .metrics { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:18px; margin:24px 0; }
+    .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:22px; box-shadow:0 2px 6px rgba(15,23,42,.04); }
+    .label { color:var(--muted); font-size:.82rem; text-transform:uppercase; letter-spacing:.08em; font-weight:700; }
+    .value { color:var(--blue); font-size:2rem; font-weight:700; margin-top:8px; }
+    .row { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:20px; }
+    button { border:0; border-radius:8px; padding:11px 18px; color:white; background:var(--blue); font-weight:700; cursor:pointer; margin-right:8px; }
+    button.restart { background:var(--orange); }
+    button:disabled { opacity:.55; cursor:not-allowed; }
+    .status { padding:12px; border-radius:8px; background:#eff6ff; margin-top:14px; white-space:pre-wrap; }
+    .error { color:var(--danger); background:#fef2f2; }
+    .ready { color:var(--success); background:#f0fdf4; }
+    code { color:var(--blue); }
+  </style>
+</head>
+<body>
+  <header>
+    <div><strong style="color:var(--orange);"><i class="fa-solid fa-user-shield"></i> CIH Administrator</strong></div>
+    <div><span id="adminEmail" style="color:var(--muted);margin-right:20px;">Checking access...</span><a href="dashboard.html">User Dashboard</a></div>
+  </header>
+  <main>
+    <h1>Administration Control Center</h1>
+    <p style="color:var(--muted);">Server-verified user metrics, AI task health, and local Engine controls.</p>
+    <div id="pageStatus" class="status">Authenticating administrator...</div>
+
+    <section class="metrics">
+      <div class="card"><div class="label">Total Users</div><div class="value" id="totalUsers">--</div></div>
+      <div class="card"><div class="label">Confirmed Users</div><div class="value" id="confirmedUsers">--</div></div>
+      <div class="card"><div class="label">Recent Users (30d)</div><div class="value" id="recentUsers">--</div></div>
+      <div class="card"><div class="label">Pending AI Tasks</div><div class="value" id="pendingTasks">--</div></div>
+    </section>
+
+    <div class="row">
+      <section class="card">
+        <h2>AI Engine</h2>
+        <p id="ollamaDetails">Loading engine status...</p>
+        <button id="startBtn"><i class="fa-solid fa-play"></i> Start Engine</button>
+        <button id="restartBtn" class="restart"><i class="fa-solid fa-rotate"></i> Restart Engine</button>
+        <div id="ollamaAction" class="status" style="display:none;"></div>
+      </section>
+      <section class="card">
+        <h2>Backend Runtime</h2>
+        <p>Uptime: <strong id="uptime">--</strong></p>
+        <p>Completed tasks: <strong id="completedTasks">--</strong></p>
+        <p>Failed tasks: <strong id="failedTasks">--</strong></p>
+        <p style="color:var(--muted);font-size:.9rem;">User totals are fetched only through the server-side Supabase service role.</p>
+      </section>
+    </div>
+  </main>
+
+  <script type="module">
+    import { requireAuth, authenticatedFetch } from './auth.js';
+
+    const statusBox = document.getElementById('pageStatus');
+
+    async function parse(response) {
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.detail || `Request failed (${response.status})`);
+      return data;
+    }
+
+    async function loadMetrics() {
+      const session = await requireAuth();
+      if (!session) return;
+      const profile = await parse(await authenticatedFetch('/api/auth/me'));
+      if (!profile.is_admin) {
+        window.location.replace('dashboard.html');
+        return;
+      }
+      document.getElementById('adminEmail').textContent = profile.email;
+      const data = await parse(await authenticatedFetch('/api/admin/metrics'));
+      const users = data.users || {};
+      document.getElementById('totalUsers').textContent = users.total_users ?? 'Setup required';
+      document.getElementById('confirmedUsers').textContent = users.confirmed_users ?? '--';
+      document.getElementById('recentUsers').textContent = users.recent_users ?? '--';
+      document.getElementById('pendingTasks').textContent = data.tasks.generating;
+      document.getElementById('completedTasks').textContent = data.tasks.completed;
+      document.getElementById('failedTasks').textContent = data.tasks.error;
+      document.getElementById('uptime').textContent = `${Math.round(data.uptime_seconds)} seconds`;
+      const ollama = data.ollama;
+      document.getElementById('ollamaDetails').textContent = `${ollama.state} — model: ${ollama.model}; available: ${ollama.models.join(', ') || 'none'}`;
+      statusBox.textContent = users.configured ? 'Administrator metrics loaded.' : users.message;
+      statusBox.className = users.configured ? 'status ready' : 'status';
+    }
+
+    async function control(action) {
+      const output = document.getElementById('ollamaAction');
+      const buttons = [document.getElementById('startBtn'), document.getElementById('restartBtn')];
+      output.style.display = 'block';
+      output.className = 'status';
+      output.textContent = `${action === 'start' ? 'Starting' : 'Restarting'} AI Engine...`;
+      buttons.forEach(button => button.disabled = true);
+      try {
+        const data = await parse(await authenticatedFetch(`/api/admin/ollama/${action}`, { method:'POST' }));
+        output.textContent = `Engine ${data.state}. Model ${data.model} is ${data.model_available ? 'available' : 'missing'}.`;
+        output.className = 'status ready';
+        await loadMetrics();
+      } catch (error) {
+        output.textContent = error.message;
+        output.className = 'status error';
+      } finally {
+        buttons.forEach(button => button.disabled = false);
+      }
+    }
+
+    document.getElementById('startBtn').addEventListener('click', () => control('start'));
+    document.getElementById('restartBtn').addEventListener('click', () => control('restart'));
+    loadMetrics().catch(error => {
+      statusBox.textContent = error.message;
+      statusBox.className = 'status error';
+    });
+  </script>
+</body>
+</html>

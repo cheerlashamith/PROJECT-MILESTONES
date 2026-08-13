@@ -1,0 +1,9 @@
+[theme]
+base="light"
+primaryColor="#f97316"
+backgroundColor="#ffffff"
+secondaryBackgroundColor="#f1f5f9"
+textColor="#1e293b"
+
+[server]
+address="127.0.0.1"

@@ -1,0 +1,19 @@
+venv/
+__pycache__/
+*.pyc
+.env
+.DS_Store
+logs/
+
+# Runtime-generated frontend artifacts
+public/generated_themes/
+public/temp/
+
+# Large local datasets and model checkpoints
+dataset_PPE/
+models/
+
+# Archived/duplicate project worktrees retained locally for review
+ai theme visualizer/
+reportingagent/
+Safety & Risk Agent/

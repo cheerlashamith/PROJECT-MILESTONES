@@ -1,0 +1,61 @@
+# PROJECT EXPLANATION: Construction Intelligence Hub (CIH)
+# Milestone 1 - Frontend Implementation
+
+## 1. Project Overview
+The Construction Intelligence Hub (CIH) is designed as a comprehensive tool for the construction industry. The primary goal is to replace manual, error-prone estimation processes with an AI-driven digital platform. It caters to various stakeholders, including homeowners who want a budget estimate and contractors who need material planning.
+
+## 2. Design Philosophy
+The application follows a "Construction & Engineering" theme. 
+- **Color Palette:** Dark Blue (#1E3A8A) represents professionalism and trust; Orange (#F97316) represents construction, energy, and caution.
+- **User Experience (UX):** The app uses a step-by-step linear flow (Details -> Planning -> Estimation -> Report) to ensure the user isn't overwhelmed.
+- **Responsiveness:** Built with Streamlit's container and column system to ensure it looks professional on both desktops and tablets.
+
+## 3. Page-by-Page Functionality
+
+### Page 1: Home (app.py)
+- **Purpose:** Acts as the landing page and executive dashboard.
+- **Key Components:**
+    - Welcome banner with the project title and subtitle.
+    - **KPI Metrics:** Displays high-level stats (Projects created, avg cost, etc.) to give an immediate sense of the platform's scale.
+    - **Feature Cards:** A grid of cards explaining the core capabilities of the platform.
+    - **Quick Start Buttons:** Directs users to start a new project.
+
+### Page 2: Project Details (1_Project_Details.py)
+- **Purpose:** Collects the "Who, Where, and What" of the project.
+- **Functionality:** A comprehensive form capturing owner details, location, house type, and budget. 
+- **Technical Detail:** Uses `st.session_state` to save this data so it can be referenced in the final report.
+
+### Page 3: House Planner (2_House_Planner.py)
+- **Purpose:** Captures the geometric requirements of the building.
+- **Functionality:** Allows users to input length and width for various rooms (Living Room, Kitchen, etc.).
+- **Calculation:** Automatically calculates the Total Built-up Area based on the inputs.
+
+### Page 4: Material Estimation (3_Material_Estimation.py)
+- **Purpose:** Provides the "Bill of Quantities" (BoQ).
+- **Functionality:** Displays estimated quantities of Cement, Sand, Bricks, and Steel. 
+- **Current State:** In Milestone 1, these are sample values based on standard engineering ratios. In future milestones, these will be calculated dynamically via AI models.
+
+### Page 5: Cost Estimation (4_Cost_Estimation.py)
+- **Purpose:** Financial forecasting.
+- **Functionality:** Breaks down costs into Material, Labor, Finishing, and Miscellaneous.
+- **Visualization:** Includes a Plotly Pie Chart to visualize which part of the project consumes the most budget.
+
+### Page 6: Report (5_Report.py)
+- **Purpose:** Synthesis of all project data.
+- **Functionality:** Aggregates data from the Project Details and House Planner pages into a clean, printable summary.
+- **Placeholders:** Includes buttons for PDF/Excel exports, which will be implemented in the backend phase.
+
+### Page 7: About Project (6_About_Project.py)
+- **Purpose:** Project documentation and roadmap.
+- **Functionality:** Explains the vision and lists future AI features (Delay prediction, real-time monitoring, etc.) to show the growth potential of the product.
+
+## 4. Technical Implementation Details
+- **State Management:** I used `streamlit.session_state` to ensure that when a user enters their name on Page 2, it is still available when they generate the report on Page 6.
+- **Styling:** Custom HTML/CSS injection was used to override the default Streamlit look to make it look like a standalone commercial product.
+- **Modularity:** By splitting the app into multiple files in the `pages/` directory, the code is easy to maintain and scale.
+
+## 5. Future Roadmap (Milestone 2 & 3)
+- Integration of a Machine Learning model to predict materials.
+- Database integration (PostgreSQL/MongoDB) to save projects permanently.
+- Authentication system for different user roles (Admin, Engineer, Client).
+- Real-time PDF report generation using libraries like FPDF or ReportLab.

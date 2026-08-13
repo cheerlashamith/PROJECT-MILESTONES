@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ACRA - Daily Shift Reports</title>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Libre+Franklin:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="api-client.js"></script>
+  <script type="module" src="page-auth.js"></script>
+  <style>
+    :root {
+      --bg-main: #f8fafc;
+      --bg-card: #ffffff;
+      --bg-sidebar: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --accent-primary: #f97316;
+      --accent-secondary: #1e3a8a;
+      --border-color: #e2e8f0;
+      --success: #16a34a;
+      --error: #dc2626;
+      --transition-speed: 0.3s;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Libre Franklin', sans-serif; background-color: var(--bg-main); color: var(--text-main); display: flex; min-height: 100vh; overflow-x: hidden; }
+    h1, h2, h3, h4, h5, h6 { font-family: 'Libre Baskerville', serif; color: var(--accent-secondary); }
+
+    /* Sidebar */
+    #sidebar { width: 280px; background-color: var(--bg-sidebar); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; height: 100vh; position: fixed; left: 0; top: 0; transition: transform var(--transition-speed) ease; z-index: 1000; overflow-y: auto; }
+    #sidebar.collapsed { transform: translateX(-280px); }
+    .sidebar-header { padding: 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); }
+    .brand-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .brand-logo i { color: var(--accent-primary); font-size: 1.8rem; }
+    .brand-title { font-family: 'Libre Baskerville', serif; font-weight: 700; font-size: 1.25rem; color: var(--accent-secondary); }
+    .close-sidebar-btn { background: none; border: none; color: var(--text-muted); font-size: 1.2rem; cursor: pointer; }
+    .sidebar-menu { padding: 20px 0; display: flex; flex-direction: column; gap: 5px; }
+    .menu-group-title { padding: 10px 24px; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+    .menu-item { display: flex; align-items: center; gap: 12px; padding: 12px 24px; color: var(--text-main); text-decoration: none; font-weight: 500; transition: all var(--transition-speed); border-left: 4px solid transparent; }
+    .menu-item:hover, .menu-item.active { color: var(--accent-secondary); background-color: #f1f5f9; border-left-color: var(--accent-primary); }
+    .menu-item i { font-size: 1.1rem; width: 20px; color: var(--accent-primary); }
+
+    /* Main */
+    #main-wrapper { flex: 1; margin-left: 280px; transition: margin-left var(--transition-speed) ease; display: flex; flex-direction: column; min-height: 100vh; }
+    #main-wrapper.expanded { margin-left: 0; }
+    header { background-color: var(--bg-card); height: 70px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; position: sticky; top: 0; z-index: 900; }
+    .toggle-sidebar-btn { background: none; border: none; color: var(--accent-secondary); font-size: 1.4rem; cursor: pointer; }
+    .content-container { padding: 40px; flex: 1; max-width: 1400px; width: 100%; margin: 0 auto; }
+
+    .card { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 28px; margin-bottom: 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .row { display: flex; flex-wrap: wrap; gap: 20px; }
+    .col { flex: 1; min-width: 280px; }
+
+    .form-group { margin-bottom: 20px; }
+    .form-label { display: block; font-size: 0.85rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .form-control { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border-color); border-radius: 8px; font-family: inherit; font-size: 0.95rem; transition: border-color 0.2s; background: #fff; }
+    .form-control:focus { outline: none; border-color: var(--accent-primary); box-shadow: 0 0 0 3px rgba(249,115,22,0.1); }
+    textarea.form-control { resize: vertical; }
+
+    .btn { padding: 12px 24px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; font-size: 0.95rem; }
+    .btn-primary { background-color: var(--accent-primary); color: white; }
+    .btn-primary:hover { background-color: #ea580c; transform: translateY(-1px); }
+    .btn-secondary { background-color: var(--accent-secondary); color: white; }
+    .btn-secondary:hover { background-color: #1e40af; transform: translateY(-1px); }
+    .btn-outline { background-color: transparent; border: 1.5px solid var(--border-color); color: var(--text-main); }
+    .btn-outline:hover { background-color: #f1f5f9; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    /* Weather Widget */
+    .weather-widget { background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #38bdf8 100%); color: white; padding: 24px 28px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; box-shadow: 0 4px 20px rgba(30,58,138,0.25); }
+    .weather-temp { font-size: 3rem; font-weight: 700; font-family: 'Libre Baskerville', serif; line-height: 1; }
+    .weather-desc { font-size: 1rem; text-transform: capitalize; opacity: 0.9; margin-top: 4px; }
+    .weather-loc { font-size: 0.85rem; opacity: 0.75; margin-top: 2px; }
+    .weather-icon { font-size: 4rem; opacity: 0.7; }
+
+    /* AI Report Preview */
+    #ai-report-preview { display: none; }
+    .report-preview-box { background: #f8fafc; border: 1.5px solid var(--border-color); border-radius: 8px; padding: 24px; font-size: 0.95rem; line-height: 1.8; white-space: pre-wrap; max-height: 500px; overflow-y: auto; }
+    .report-preview-box h2 { font-size: 1.3rem; margin: 20px 0 8px; color: var(--accent-secondary); border-bottom: 1px solid var(--border-color); padding-bottom: 6px; }
+    .report-preview-box h3 { font-size: 1.1rem; margin: 16px 0 6px; color: var(--accent-secondary); }
+    .report-preview-box strong { color: var(--accent-secondary); }
+    .report-preview-box ul { margin-left: 20px; margin-top: 6px; }
+    .report-preview-box li { margin-bottom: 4px; }
+
+    .status-msg { padding: 14px 18px; border-radius: 8px; font-weight: 600; display: flex; align-items: center; gap: 10px; margin: 16px 0; }
+    .status-generating { background: #fffbeb; border: 1px solid #fbbf24; color: #92400e; }
+    .status-success { background: #f0fdf4; border: 1px solid #86efac; color: #166534; }
+    .status-error { background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b; }
+
+    /* History items */
+    .history-item { border-left: 4px solid var(--accent-primary); padding-left: 16px; margin-bottom: 18px; }
+    .history-date { font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .history-title { font-weight: 700; font-size: 0.95rem; margin-top: 4px; }
+    .history-meta { font-size: 0.88rem; color: var(--text-muted); margin-top: 2px; }
+
+    /* Saved reports */
+    .saved-report-card { background: white; border: 1px solid var(--border-color); border-radius: 10px; padding: 20px; margin-bottom: 16px; border-left: 4px solid var(--accent-primary); }
+    .saved-report-card h4 { margin-bottom: 8px; }
+    .saved-report-content { font-size: 0.88rem; color: var(--text-muted); line-height: 1.6; max-height: 80px; overflow: hidden; mask-image: linear-gradient(to bottom, black 60%, transparent); }
+    .saved-report-actions { display: flex; gap: 10px; margin-top: 14px; }
+  </style>
+</head>
+<body>
+
+  <aside id="sidebar">
+    <div class="sidebar-header">
+      <a href="dashboard.html" class="brand-logo">
+        <i class="fa-solid fa-helmet-safety"></i>
+        <div class="brand-title">ACRA Platform</div>
+      </a>
+      <button class="close-sidebar-btn" onclick="toggleSidebar()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="sidebar-menu">
+      <div class="menu-group-title">Main</div>
+      <a href="dashboard.html" class="menu-item"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+      <a href="ai-assistant-v2.html" class="menu-item"><i class="fa-solid fa-robot"></i> AI Assistant</a>
+      <a href="projects.html" class="menu-item"><i class="fa-solid fa-folder"></i> Projects</a>
+      <div class="menu-group-title">AI Modules</div>
+      <a href="risk-detection.html" class="menu-item"><i class="fa-solid fa-triangle-exclamation"></i> Risk Detection</a>
+      <a href="material-estimation.html" class="menu-item"><i class="fa-solid fa-calculator"></i> Material Estimation</a>
+      <a href="daily-reports.html" class="menu-item active"><i class="fa-solid fa-file-invoice"></i> Daily Reports</a>
+      <a href="project-qa.html" class="menu-item"><i class="fa-solid fa-circle-question"></i> Project Q&A</a>
+      <div class="menu-group-title">Management</div>
+      <a href="documents.html" class="menu-item"><i class="fa-solid fa-file-shield"></i> Documents</a>
+      <a href="ai-reports.html" class="menu-item"><i class="fa-solid fa-file-contract"></i> AI Reports</a>
+      <a href="analytics.html" class="menu-item"><i class="fa-solid fa-chart-pie"></i> Analytics</a>
+      <a href="settings.html" class="menu-item"><i class="fa-solid fa-gear"></i> Settings</a>
+    </div>
+  </aside>
+
+  <main id="main-wrapper">
+    <header>
+      <div style="display: flex; align-items: center; gap: 15px;">
+        <button class="toggle-sidebar-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+        <div style="font-weight: 600; color: var(--accent-secondary);"><i class="fa-solid fa-microchip" style="color:var(--accent-primary); margin-right:8px;"></i>AI Daily Report Generator</div>
+      </div>
+    </header>
+
+    <div class="content-container">
+      <h2 style="font-size: 1.8rem; margin-bottom: 12px; color: var(--accent-secondary);">Daily Shift Report</h2>
+      <p style="font-size: 1rem; color: var(--text-muted); margin-bottom: 28px;">Generate professional AI-enhanced construction reports. The AI expands your field notes into a detailed, audit-ready report.</p>
+
+      <!-- Weather Widget -->
+      <div class="weather-widget">
+        <div>
+          <div class="weather-loc" id="weather-city"><i class="fa-solid fa-location-dot"></i> London (Live)</div>
+          <div class="weather-temp" id="weather-temp">--°C</div>
+          <div class="weather-desc" id="weather-desc">Fetching real-time weather data...</div>
+        </div>
+        <i class="fa-solid fa-cloud-sun weather-icon"></i>
+      </div>
+
+      <div class="row">
+        <!-- Form -->
+        <div class="col" style="flex: 1.6;">
+          <div class="card" style="border-top: 4px solid var(--accent-primary);">
+            <h3 style="margin-bottom: 22px;"><i class="fa-solid fa-clipboard-list" style="color:var(--accent-primary); margin-right:10px;"></i>Shift Operations Form</h3>
+            <form id="daily-report-form" onsubmit="generateReport(event)">
+              <div class="row">
+                <div class="col">
+                  <div class="form-group">
+                    <label class="form-label">Site Location (for weather)</label>
+                    <input type="text" class="form-control" id="report-loc" value="London" onchange="fetchWeather()" placeholder="City / Site Location">
+                  </div>
+                </div>
+                <div class="col">
+                  <div class="form-group">
+                    <label class="form-label">Report Date</label>
+                    <input type="date" class="form-control" id="report-date">
+                  </div>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col">
+                  <div class="form-group">
+                    <label class="form-label">Active Manpower</label>
+                    <input type="text" class="form-control" id="report-manpower" value="24 workers" placeholder="e.g. 24 workers">
+                  </div>
+                </div>
+                <div class="col">
+                  <div class="form-group">
+                    <label class="form-label">Weather Override <span style="font-weight:400;color:var(--text-muted);">(auto-filled)</span></label>
+                    <input type="text" class="form-control" id="report-weather" placeholder="Auto-filled from weather API">
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Major Work Accomplished <span style="color:var(--error);">*</span></label>
+                <textarea class="form-control" id="report-work" rows="5" placeholder="Describe the major construction activities completed today (the AI will expand this into a professional narrative)...">Completed concrete pouring for foundation zone A. Initiated steel reinforcement for zone B columns. Installed formwork for slab level 2.</textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Safety Incidents / Issues / Delays</label>
+                <textarea class="form-control" id="report-incidents" rows="3" placeholder="List any safety incidents, delays, or issues encountered...">None reported. All workers wearing PPE. Minor delay due to concrete mixer maintenance.</textarea>
+              </div>
+
+              <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:8px;">
+                <button type="button" class="btn btn-primary" id="gen-btn" onclick="generateReport()" style="width: 100%;">
+                  <i class="fa-solid fa-wand-magic-sparkles"></i> Generate AI Report
+                </button>
+              </div>
+            </form>
+
+            <!-- Status -->
+            <div id="status-msg" style="display:none;" class="status-msg status-generating">
+              <i class="fa-solid fa-spinner fa-spin"></i>
+              <span id="status-text">Sending to AI Engine...</span>
+            </div>
+          </div>
+
+          <!-- AI Report Preview -->
+          <div id="ai-report-preview" class="card" style="border-top: 4px solid var(--success);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+              <h3 style="margin:0; color: var(--success);"><i class="fa-solid fa-check-circle" style="margin-right:8px;"></i>AI-Generated Report Ready</h3>
+              <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button class="btn btn-secondary" onclick="downloadReportPDF()" id="download-pdf-btn">
+                  <i class="fa-solid fa-file-pdf"></i> Download PDF
+                </button>
+                <button class="btn btn-outline" onclick="saveReport()">
+                  <i class="fa-solid fa-floppy-disk"></i> Save Report
+                </button>
+              </div>
+            </div>
+            <div id="report-preview-content" class="report-preview-box"></div>
+          </div>
+        </div>
+
+        <!-- Sidebar: saved + history -->
+        <div class="col" style="flex: 1;">
+          <div class="card">
+            <h3 style="margin-bottom: 18px;"><i class="fa-solid fa-clock-rotate-left" style="color:var(--accent-primary); margin-right:8px;"></i>Recent History</h3>
+            <div class="history-item">
+              <div class="history-date">Yesterday</div>
+              <div class="history-title">Excavation Phase 2</div>
+              <div class="history-meta">Weather: Clear 22°C &bull; No incidents</div>
+            </div>
+            <div class="history-item">
+              <div class="history-date">2 Days Ago</div>
+              <div class="history-title">Formwork Preparation</div>
+              <div class="history-meta">Weather: Rain &bull; 2hr delay</div>
+            </div>
+            <div class="history-item">
+              <div class="history-date">3 Days Ago</div>
+              <div class="history-title">Foundation Concrete Pour</div>
+              <div class="history-meta">Weather: Overcast 18°C &bull; No incidents</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 style="margin-bottom: 18px;"><i class="fa-solid fa-folder-open" style="color:var(--accent-primary); margin-right:8px;"></i>Saved Reports</h3>
+            <div id="saved-reports-list">
+              <p style="color:var(--text-muted); font-size:0.9rem;">No saved reports yet. Generate one above.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('collapsed');
+      document.getElementById('main-wrapper').classList.toggle('expanded');
+    }
+
+    // Set today's date by default
+    document.getElementById('report-date').value = new Date().toISOString().split('T')[0];
+
+    let currentWeather = "Sunny, 25°C";
+    let currentReport = null;
+
+    async function fetchWeather() {
+      const city = document.getElementById('report-loc').value || 'London';
+      try {
+        const res = await fetch(`/api/weather?city=${encodeURIComponent(city)}`);
+        if (res.ok) {
+          const data = await res.json();
+          const temp = Math.round(data.main.temp);
+          const desc = data.weather[0].description;
+          document.getElementById('weather-temp').innerText = `${temp}°C`;
+          document.getElementById('weather-desc').innerText = desc;
+          document.getElementById('weather-city').innerHTML = `<i class="fa-solid fa-location-dot"></i> ${data.name} (Live)`;
+          currentWeather = `${desc}, ${temp}°C`;
+          document.getElementById('report-weather').value = currentWeather;
+        } else {
+          document.getElementById('weather-desc').innerText = "Unable to fetch live data";
+        }
+      } catch (err) {
+        document.getElementById('weather-desc').innerText = "Weather unavailable";
+      }
+    }
+
+    function showStatus(type, text) {
+      const el = document.getElementById('status-msg');
+      const textEl = document.getElementById('status-text');
+      el.className = `status-msg status-${type}`;
+      el.style.display = 'flex';
+      const icons = { generating: 'fa-spinner fa-spin', success: 'fa-check-circle', error: 'fa-circle-exclamation' };
+      el.querySelector('i').className = `fa-solid ${icons[type]}`;
+      textEl.textContent = text;
+    }
+
+    function renderMarkdown(text) {
+      // Convert markdown to styled HTML
+      return text
+        .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+        .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+        .replace(/^# (.+)$/gm, '<h2>$1</h2>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/^[-•] (.+)$/gm, '<li>$1</li>')
+        .replace(/(<li>.*<\/li>\n?)+/g, m => `<ul>${m}</ul>`)
+        .replace(/\n{2,}/g, '<br><br>')
+        .replace(/\n/g, '\n');
+    }
+
+    async function generateReport(e) {
+      if (e) e.preventDefault();
+      const btn = document.getElementById('gen-btn');
+      const work = document.getElementById('report-work').value.trim();
+      if (!work) {
+        alert('Please describe the work accomplished before generating the report.');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating...';
+      showStatus('generating', 'The AI is generating your professional construction report. This may take a few moments...');
+      document.getElementById('ai-report-preview').style.display = 'none';
+
+      const weatherOverride = document.getElementById('report-weather').value.trim() || currentWeather;
+      const payload = {
+        report_date: document.getElementById('report-date').value,
+        location: document.getElementById('report-loc').value,
+        weather: weatherOverride,
+        manpower: document.getElementById('report-manpower').value,
+        tasks_completed: work,
+        issues: document.getElementById('report-incidents').value.trim() || 'None reported.'
+      };
+
+      try {
+        const reportText = await CIHApi.submitTask('/api/daily-report', payload, { timeoutMs: 5 * 60_000 });
+        currentReport = {
+          id: Date.now(),
+          date: new Date().toLocaleString(),
+          reportDate: payload.report_date,
+          location: payload.location,
+          content: String(reportText)
+        };
+
+        // Show preview
+        const previewEl = document.getElementById('report-preview-content');
+        previewEl.innerHTML = renderMarkdown(currentReport.content);
+        document.getElementById('ai-report-preview').style.display = 'block';
+        document.getElementById('ai-report-preview').scrollIntoView({ behavior: 'smooth' });
+        showStatus('success', 'AI report generated successfully! Download the PDF or save it below.');
+      } catch (err) {
+        showStatus('error', '❌ Error: ' + err.message);
+      }
+
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Generate AI Report';
+    }
+
+    function saveReport() {
+      if (!currentReport) return;
+      const reports = JSON.parse(localStorage.getItem('dailyReports') || '[]');
+      reports.unshift(currentReport);
+      localStorage.setItem('dailyReports', JSON.stringify(reports));
+      loadSavedReports();
+      showStatus('success', 'Report saved successfully!');
+    }
+
+    function loadSavedReports() {
+      const container = document.getElementById('saved-reports-list');
+      const reports = JSON.parse(localStorage.getItem('dailyReports') || '[]');
+      if (reports.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-muted); font-size:0.9rem;">No saved reports yet. Generate one above.</p>';
+        return;
+      }
+      container.innerHTML = reports.slice(0, 5).map(r => `
+        <div class="saved-report-card">
+          <h4 style="font-size:0.95rem; margin-bottom:6px;">
+            <i class="fa-solid fa-file-lines" style="color:var(--accent-primary); margin-right:6px;"></i>
+            Report – ${r.reportDate || r.date}
+          </h4>
+          <div class="saved-report-content">${r.content.slice(0, 150)}...</div>
+          <div class="saved-report-actions">
+            <button class="btn btn-secondary" style="padding:8px 14px; font-size:0.82rem;" onclick="downloadSavedPDF(${r.id})">
+              <i class="fa-solid fa-file-pdf"></i> PDF
+            </button>
+            <button class="btn btn-outline" style="padding:8px 14px; font-size:0.82rem;" onclick="deleteSavedReport(${r.id})">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function deleteSavedReport(id) {
+      if (!confirm('Delete this report?')) return;
+      let reports = JSON.parse(localStorage.getItem('dailyReports') || '[]');
+      reports = reports.filter(r => r.id !== id);
+      localStorage.setItem('dailyReports', JSON.stringify(reports));
+      loadSavedReports();
+    }
+
+    function buildPDFElement(reportContent, meta) {
+      const el = document.createElement('div');
+      el.style.cssText = 'padding:40px; font-family: Arial, sans-serif; color:#0f172a; background:#fff;';
+      const formatted = reportContent
+        .replace(/### (.+)/g, '<h4 style="color:#1e3a8a;margin-top:18px;margin-bottom:8px;font-size:14px;">$1</h4>')
+        .replace(/## (.+)/g, '<h3 style="color:#1e3a8a;margin-top:22px;margin-bottom:10px;border-bottom:1px solid #e2e8f0;padding-bottom:5px;font-size:16px;">$1</h3>')
+        .replace(/# (.+)/g, '<h2 style="color:#1e3a8a;margin-top:28px;margin-bottom:12px;font-size:18px;">$1</h2>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>');
+      el.innerHTML = `
+        <div style="border-bottom:3px solid #1e3a8a;padding-bottom:18px;margin-bottom:28px;display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <h1 style="color:#1e3a8a;font-size:22px;margin:0;font-weight:700;">ACRA Platform</h1>
+            <p style="color:#f97316;font-weight:700;margin:6px 0 0;text-transform:uppercase;letter-spacing:1px;font-size:12px;">Daily Shift Report – AI Enhanced</p>
+          </div>
+          <div style="text-align:right;font-size:12px;color:#64748b;">
+            <div>Report Date: <strong>${meta.reportDate || 'N/A'}</strong></div>
+            <div>Location: <strong>${meta.location || 'N/A'}</strong></div>
+            <div>Generated: ${meta.date}</div>
+          </div>
+        </div>
+        <div style="line-height:1.7;font-size:13px;white-space:pre-wrap;">${formatted}</div>
+        <div style="margin-top:50px;border-top:1px solid #e2e8f0;padding-top:14px;text-align:center;font-size:11px;color:#94a3b8;font-style:italic;">
+          This AI-generated report was produced by ACRA Platform. Official records require human sign-off.
+        </div>`;
+      return el;
+    }
+
+    function savePDF(el, filename) {
+      html2pdf().set({
+        margin: [12, 12, 12, 12],
+        filename: filename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      }).from(el).save();
+    }
+
+    function downloadReportPDF() {
+      if (!currentReport) return;
+      savePDF(buildPDFElement(currentReport.content, currentReport), `Daily_Report_${currentReport.reportDate || 'draft'}.pdf`);
+    }
+
+    function downloadSavedPDF(id) {
+      const reports = JSON.parse(localStorage.getItem('dailyReports') || '[]');
+      const r = reports.find(x => x.id === id);
+      if (!r) return;
+      savePDF(buildPDFElement(r.content, r), `Daily_Report_${r.reportDate || r.id}.pdf`);
+    }
+
+    window.onload = () => {
+      fetchWeather();
+      loadSavedReports();
+    };
+  </script>
+</body>
+</html>

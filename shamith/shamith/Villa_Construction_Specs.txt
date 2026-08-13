@@ -1,0 +1,55 @@
+=========================================
+PROJECT SPECIFICATION DOCUMENT
+=========================================
+Project Name: Seaview Luxury Villa
+Project Code: SV-2026-X
+Location: Plot 42, Coastal Ridge, CA
+Document Type: Architectural & Engineering Specs
+
+1. PROJECT OVERVIEW
+-------------------
+The Seaview Luxury Villa is a modern two-story residential building with a total built-up area of 3,200 sq.ft. The design focuses on sustainable materials, open-plan living, and panoramic sea views.
+
+2. DIMENSIONS & SPATIAL LAYOUT
+------------------------------
+- Total Plot Area: 5,000 sq.ft
+- Footprint (Ground Floor): 1,800 sq.ft
+- First Floor Area: 1,400 sq.ft
+- Ceiling Height: 12 feet (Ground Floor), 10 feet (First Floor)
+- Master Bedroom: 400 sq.ft with walk-in closet and en-suite bathroom.
+- Living Room: 600 sq.ft, open plan, connected to the dining area.
+- Kitchen: 300 sq.ft, island counter design, quartz countertops.
+
+3. STRUCTURAL REQUIREMENTS
+--------------------------
+- Foundation: Reinforced Concrete (RC) strip foundation, depth 4.5 feet.
+- Columns: 16x16 inch RC columns, spaced at a maximum of 15 feet apart.
+- Slabs: 6-inch thick RC slabs with dual-mesh steel reinforcement (Grade 60).
+- Roof: Pitched timber roof structure with Spanish clay tiles. Pitch angle: 25 degrees.
+
+4. MATERIAL SPECIFICATIONS
+--------------------------
+- Cement: Type I Portland Cement (approx. requirement: 1,200 bags).
+- Steel Reinforcement: 8 tons of TMT (Thermo Mechanically Treated) bars.
+- Bricks: First-class red clay bricks for exterior walls (Double brick wall, 9-inch thickness).
+- Sand & Aggregate: River sand for plastering; 20mm crushed stone aggregate for concrete.
+- Flooring: Italian Marble in the living room; vitrified anti-slip tiles in bathrooms and kitchen.
+- Paint: Weather-shield exterior emulsion (2 coats); premium washable interior acrylic (3 coats).
+
+5. PLUMBING & ELECTRICAL
+------------------------
+- Plumbing: UPVC pipes for cold water, CPVC for hot water. 500-gallon overhead water tank.
+- Electrical: Concealed copper wiring (AWG 12 and 14). 200 Amp main service panel. Smart home automation for lighting and HVAC.
+
+6. ESTIMATED BUDGET & TIMELINE
+------------------------------
+- Total Estimated Budget: $450,000 USD
+- Expected Start Date: September 1, 2026
+- Expected Completion Date: May 15, 2027 (Approx. 8.5 months)
+- Phase 1 (Foundation): 4 weeks
+- Phase 2 (Superstructure): 10 weeks
+- Phase 3 (Finishing & MEP): 12 weeks
+
+=========================================
+END OF DOCUMENT
+=========================================

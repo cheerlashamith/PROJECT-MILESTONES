@@ -1,0 +1,368 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ACRA - Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #f97316;
+            --primary-hover: #ea580c;
+            --bg-color: #0f172a;
+            --glass-bg: rgba(15, 23, 42, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: url('login-bg.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-main);
+            overflow: hidden;
+        }
+
+        /* Dark overlay for better readability */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(15, 23, 42, 0.4) 100%);
+            z-index: 1;
+        }
+
+        .login-container {
+            position: relative;
+            z-index: 2;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            padding: 48px;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transform: translateY(20px);
+            opacity: 0;
+            animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes slideUp {
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .brand {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .brand i {
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 16px;
+            filter: drop-shadow(0 0 10px rgba(249, 115, 22, 0.3));
+        }
+
+        .brand h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 8px;
+        }
+
+        .brand p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 14px 16px 14px 44px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            color: var(--text-main);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.1);
+        }
+
+        .form-icon {
+            position: absolute;
+            left: 16px;
+            bottom: 15px;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            transition: color 0.3s ease;
+        }
+
+        .form-control:focus + .form-icon {
+            color: var(--primary);
+        }
+
+        .eye-icon {
+            position: absolute;
+            right: 16px;
+            bottom: 15px;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .eye-icon:hover {
+            color: var(--text-main);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-top: 32px;
+        }
+
+        .btn-login:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -10px rgba(249, 115, 22, 0.5);
+        }
+
+        .demo-credentials {
+            margin-top: 32px;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px dashed var(--glass-border);
+            border-radius: 12px;
+            text-align: center;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .demo-credentials span {
+            color: var(--text-main);
+            font-weight: 600;
+            font-family: monospace;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin: 0 4px;
+        }
+
+        .error-message {
+            display: none;
+            color: #ef4444;
+            font-size: 0.875rem;
+            margin-top: 8px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="overlay"></div>
+
+    <div class="login-container">
+        <div class="brand">
+            <i class="fa-solid fa-helmet-safety"></i>
+            <h1>ACRA Platform</h1>
+            <p>Agentic AI for Safety Monitoring with Construction Risk Analytics</p>
+        </div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">Work Email</label>
+                <input type="email" id="email" class="form-control" placeholder="Enter your email" required autocomplete="email">
+                <i class="fa-solid fa-envelope form-icon"></i>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" class="form-control" placeholder="Enter your password" required>
+                <i class="fa-solid fa-lock form-icon"></i>
+                <i class="fa-solid fa-eye eye-icon" id="togglePassword"></i>
+            </div>
+
+            <div id="errorMessage" class="error-message">Invalid credentials. Please use the demo login.</div>
+
+            <button type="submit" id="submitBtn" class="btn-login">
+                Authenticate <i class="fa-solid fa-arrow-right-to-bracket"></i>
+            </button>
+            <div style="text-align: center; margin-top: 20px;">
+                <a href="#" id="toggleAuthMode" style="color: var(--primary); text-decoration: none; font-size: 0.9rem; font-weight: 500;">Don't have an account? Sign up</a>
+            </div>
+            
+            <div id="successMessage" style="display: none; color: #10b981; font-size: 0.9rem; margin-top: 15px; text-align: center; background: rgba(16, 185, 129, 0.1); padding: 10px; border-radius: 8px;">
+                <i class="fa-solid fa-envelope-circle-check"></i> Please check your email for a confirmation link!
+            </div>
+        </form>
+    </div>
+
+    <script type="module">
+        import { supabase } from './auth.js';
+
+        let isSignUp = false;
+
+        document.getElementById('toggleAuthMode').addEventListener('click', function(e) {
+            e.preventDefault();
+            isSignUp = !isSignUp;
+            const btn = document.getElementById('submitBtn');
+            const errorMsg = document.getElementById('errorMessage');
+            const successMsg = document.getElementById('successMessage');
+            
+            errorMsg.style.display = 'none';
+            successMsg.style.display = 'none';
+            
+            if (isSignUp) {
+                btn.innerHTML = 'Create Account <i class="fa-solid fa-user-plus"></i>';
+                this.innerText = 'Already have an account? Log in';
+            } else {
+                btn.innerHTML = 'Authenticate <i class="fa-solid fa-arrow-right-to-bracket"></i>';
+                this.innerText = "Don't have an account? Sign up";
+            }
+        });
+
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const btn = document.getElementById('submitBtn');
+            const errorMsg = document.getElementById('errorMessage');
+            const successMsg = document.getElementById('successMessage');
+            
+            const originalBtnHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Processing...';
+            errorMsg.style.display = 'none';
+            successMsg.style.display = 'none';
+            
+            try {
+                if (isSignUp) {
+                    const { data, error } = await supabase.auth.signUp({
+                        email: email,
+                        password: password,
+                        options: {
+                            emailRedirectTo: window.location.origin + '/dashboard.html'
+                        }
+                    });
+                    if (error) throw error;
+                    
+                    if (data.session) {
+                        // Email confirmation is disabled, log them in instantly
+                        window.location.href = 'dashboard.html';
+                    } else {
+                        // Email confirmation is enabled
+                        btn.innerHTML = originalBtnHtml;
+                        successMsg.style.display = 'block';
+                        // Clear the form
+                        document.getElementById('password').value = '';
+                    }
+                } else {
+                    const { data, error } = await supabase.auth.signInWithPassword({
+                        email: email,
+                        password: password,
+                    });
+                    if (error) throw error;
+                    window.location.href = 'dashboard.html';
+                }
+            } catch (error) {
+                btn.innerHTML = originalBtnHtml;
+                errorMsg.innerText = error.message;
+                errorMsg.style.display = 'block';
+                
+                // Shake animation
+                const container = document.querySelector('.login-container');
+                container.style.animation = 'none';
+                container.offsetHeight; /* trigger reflow */
+                container.style.animation = 'shake 0.5s';
+            }
+        });
+
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const passwordInput = document.getElementById('password');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                this.classList.remove('fa-eye');
+                this.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                this.classList.remove('fa-eye-slash');
+                this.classList.add('fa-eye');
+            }
+        });
+
+        // Add shake keyframes dynamically
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+                20%, 40%, 60%, 80% { transform: translateX(5px); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+
+    <script type="module">
+        import { supabase } from './auth.js';
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session) {
+                window.location.href = 'dashboard.html';
+            }
+        });
+    </script>
+</body>
+</html>
